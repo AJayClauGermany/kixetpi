@@ -9,6 +9,13 @@ Start with the official Raspberry Pi OS Lite image. Lite has no desktop environm
 This is a proposed procedure for a separate test Pi. We have not tested the full procedure on hardware yet. Commands below run on the Pi unless their title explicitly names the administration computer. Do not apply them to the computer hosting this documentation site.
 :::
 
+## At a glance
+
+- **Goal:** A booted, updated Raspberry Pi OS Lite installation with key-based SSH, a recorded baseline, and a known-good spare card.
+- **Runs on:** Administration computer (imaging, SSH key), then the Pi over SSH and at its local console.
+- **You need:** The hardware listed in [Before you start](/kixetpi/#before-you-start). No earlier stage.
+- **Ends with:** The [checkpoint](#checkpoint-and-troubleshooting): reboot-tested SSH and sudo, clean APT updates, a baseline, and a recovery card.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -202,7 +209,7 @@ Reconnect, confirm `uname -r`, and check `systemctl --failed`. Raspberry Pi's AP
 
 ## 6. Record an unchanged baseline
 
-Before any DietPi-inspired changes, collect the following output and keep a copy with your [walkthrough record](/kixetpi/#record-the-first-hardware-walkthrough) outside the card:
+Before any DietPi-inspired changes, collect the following output and keep a copy with your [walkthrough record](/kixetpi/reference/walkthrough-record/) outside the card:
 
 ### Resources and boot
 

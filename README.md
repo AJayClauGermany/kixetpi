@@ -17,18 +17,24 @@ Dependencies and scripts are defined in `package.json`; Deno resolves packages f
 
 ## Content
 
-The site has an overview, four main guides, and a separate agent assistance companion:
+The site follows the [Diátaxis](https://diataxis.fr/) framework loosely: the four stage guides are the main path, and smaller explanation and reference pages support them.
 
-| File in `src/content/docs/` | Purpose |
-| --- | --- |
-| `index.md` | Scope, package ownership, safety, and walkthrough record. |
-| `guides/raspberry-pi-os.md` | Image selection, first boot, updates, baseline, and recovery. |
-| `guides/dietpi.md` | Selective service and package reduction with resource tradeoffs. |
-| `guides/kicksecure.md` | SSH, firewall, update checks, and confinement limits. |
-| `guides/nix.md` | Optional declarative user packages and rollback. |
-| [`reference/agent-assistance.md`](src/content/docs/reference/agent-assistance.md) | Agent reading path, command semantics, decision gates, and resumable handoff. |
+| File in `src/content/docs/` | Diátaxis type | Purpose |
+| --- | --- | --- |
+| `index.md` | Landing page | Stages, documentation map, prerequisites, and safety rules. |
+| `guides/raspberry-pi-os.md` | How-to guide | Image selection, first boot, updates, baseline, and recovery. |
+| `guides/dietpi.md` | How-to guide | Selective service and package reduction with resource tradeoffs. |
+| `guides/kicksecure.md` | How-to guide | SSH, firewall, update checks, and confinement limits. |
+| `guides/nix.md` | How-to guide | Optional declarative user packages and rollback. |
+| `explanation/adapt-not-convert.md` | Explanation | Why practices are borrowed rather than distributions converted; ownership of the system. |
+| `explanation/limits.md` | Explanation | Security, performance, recovery, and test-result limits. |
+| `reference/conventions.md` | Reference | Block titles, placeholders, shell behavior, and command effects. |
+| `reference/walkthrough-record.md` | Reference | Hardware walkthrough template and status values. |
+| `reference/versions.md` | Reference | Pinned upstream versions, review dates, and how to re-check them. |
+| [`reference/agent-assistance.md`](src/content/docs/reference/agent-assistance.md) | How-to (agents) | Agent reading path, decision gates, and resumable handoff. |
+| `reference/vm-test-run.md` | How-to and test log | Debian ARM64 VM command preflight and its recorded trials. |
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name; the sidebar order is set in `astro.config.mjs`.
 
 ## Commands
 
@@ -49,7 +55,7 @@ To run the dev server in the background, use `deno task dev --background`. Manag
 
 Run `deno task build` to validate content and generate the static site and search index. With dependencies already installed, `deno task --node-modules-dir=manual --frozen build` uses the existing dependency directory and refuses lockfile changes. A website build does not test any Raspberry Pi instructions.
 
-Keep source links next to the relevant guidance, distinguish upstream facts from project choices, and record hardware test results before claiming support. Do not add distribution conversion scripts or run the guide's system commands on the documentation host.
+Keep source links next to the relevant guidance, distinguish upstream facts from project choices, and record hardware test results before claiming support. When you re-check upstream sources, update the guide's "Sources and review status" date and the matching row in `reference/versions.md`. Do not add distribution conversion scripts or run the guide's system commands on the documentation host.
 
 ## GitHub Pages
 

@@ -9,6 +9,13 @@ Keep the Raspberry Pi OS base from [stage 1](/kixetpi/guides/raspberry-pi-os/) a
 Use a test Pi with a known-good card backup and working local console access. SSH and firewall changes can lock you out. Keep your first SSH session open, but do not treat it as a substitute for a console. No hardening or recovery procedure here has passed a hardware test.
 :::
 
+## At a glance
+
+- **Goal:** Key-only SSH, an optional sudo password, an optional inbound firewall, a recorded view of AppArmor, and a regular update routine.
+- **Runs on:** The test Pi over SSH and at its **local console**, plus the administration computer for fresh login tests.
+- **You need:** Stage 2's [checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), a known-good backup, working console access, and your account password.
+- **Ends with:** The [checkpoint](#checkpoint): reboot-tested access and workload, with applied and skipped controls recorded. Stopping here is a complete path.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -26,7 +33,7 @@ Kicksecure's [Raspberry Pi](https://www.kicksecure.com/wiki/Raspberry_Pi) and [A
 
 Do not add Kicksecure repositories or install its metapackages, `security-misc`, replacement kernels, or boot-management packages on this base. Do not copy GRUB commands, x86-specific settings, or large sysctl lists. Those changes can conflict with Pi boot, networking, devices, or package management.
 
-The practices we use here are granting only needed privileges, exposing fewer services, keeping software updated, and restricting what applications can access where possible. The procedures below use Raspberry Pi OS and Debian tools. Kicksecure does not support this adaptation as a Kicksecure installation.
+The practices we use here are granting only needed privileges, exposing fewer services, keeping software updated, and restricting what applications can access where possible. The procedures below use Raspberry Pi OS and Debian tools. Kicksecure does not support this adaptation as a Kicksecure installation. For the reasoning, and for what hardening here cannot achieve, see [Why adapt instead of convert](/kixetpi/explanation/adapt-not-convert/) and [Security, performance, and recovery limits](/kixetpi/explanation/limits/#what-hardening-does-not-do).
 
 ## 1. Check updates and administrative privileges
 

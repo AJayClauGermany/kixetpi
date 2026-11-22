@@ -9,6 +9,13 @@ You can stop after [hardening](/kixetpi/guides/kicksecure/) and use APT alone. T
 This path targets a compatible Pi running 64-bit Raspberry Pi OS Lite. It adds a privileged background service, build accounts, and a package store. You must update Nix and its packages separately from APT. We have not measured resource use or tested Home Manager activation on a Pi. Use the separate test Pi, not the documentation computer.
 :::
 
+## At a glance
+
+- **Goal:** A multi-user Nix installation and a small, pinned Home Manager configuration for your user tools, with a tested rollback.
+- **Runs on:** The test Pi as your ordinary user; the installer requests `sudo` itself.
+- **You need:** Stage 3's [checkpoint](/kixetpi/guides/kicksecure/#checkpoint), 64-bit userspace (`arm64`), spare RAM and storage, and a fresh pre-Nix card backup.
+- **Ends with:** The [checkpoint](#checkpoint): recorded versions, locks, and generations, plus a tested package change and rollback.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -28,7 +35,7 @@ The division is by responsibility, not by eliminating every duplicated library. 
 
 Keep system-service executables on explicit APT-managed paths. Do not use NixOS modules, `nixos-rebuild`, Home Manager system-service substitutes, or a Nix-managed login shell in this initial setup. The example below manages only two user tools and the Home Manager command itself.
 
-Nix is not a security boundary for running programs. A malicious Nix package or Home Manager activation can act with your user's permissions. A privileged daemon does not make the software it supplies trustworthy. Use only reviewed configuration and trusted package sources; never run Home Manager with `sudo`.
+Nix is not a security boundary for running programs. A malicious Nix package or Home Manager activation can act with your user's permissions. A privileged daemon does not make the software it supplies trustworthy. Use only reviewed configuration and trusted package sources; never run Home Manager with `sudo`. See [who owns which part of the system](/kixetpi/explanation/adapt-not-convert/#who-owns-which-part-of-the-system) for the full division of responsibility.
 
 ## 1. Check architecture and capacity
 

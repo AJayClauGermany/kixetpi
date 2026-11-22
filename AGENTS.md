@@ -4,6 +4,16 @@ For help with the Raspberry Pi walkthrough, read [the agent assistance companion
 
 Pi commands target a separate test machine, not this repository's development host. Confirm the operator's target and authorization, and distinguish documentation edits from live administration. All hardware procedures remain untested; a site build is not a hardware test. Preserve the human-first guides and keep agent-specific workflow guidance in the companion.
 
+## Documentation structure
+
+The site uses [Diátaxis](https://diataxis.fr/) as a guide, not a rigid split. Put new content where its purpose fits:
+
+- **How-to guides** (`src/content/docs/guides/`): the four stages are the authoritative procedure. Keep steps, conditions, checks, and recovery there; keep explanations short and link out.
+- **Explanation** (`src/content/docs/explanation/`): why the project borrows practices instead of converting distributions, ownership, and the limits of security, performance, recovery, and test claims.
+- **Reference** (`src/content/docs/reference/`): conventions, command effects, the walkthrough record template, and pinned versions. Agent and VM pages also live here for stable URLs, but appear under "Agents and testing" in the sidebar.
+
+When adding a page, also add it to the sidebar in `astro.config.mjs` and the content table in `README.md`. When re-checking upstream sources, update the affected guide's "Sources and review status" section and `reference/versions.md` together. `raspberrypi.com` and `github.com` may block automated fetchers; the Raspberry Pi documentation's AsciiDoc sources on `raw.githubusercontent.com` are an equivalent check.
+
 ## Development
 
 Use Deno 2 for dependency management and project commands, not npm, npx, pnpm, Yarn, or Bun. Installation and production builds have been verified with Deno 2.9.5.

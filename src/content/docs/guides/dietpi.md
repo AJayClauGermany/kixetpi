@@ -9,6 +9,13 @@ Keep Raspberry Pi OS Lite and make only the reductions your workload supports. D
 Complete the [base setup](/kixetpi/guides/raspberry-pi-os/) and its backup checkpoint first. All commands here run on the test Pi. No savings have been measured, and there is no target package count or RAM figure.
 :::
 
+## At a glance
+
+- **Goal:** Keep only the services and packages your workload needs, with a bounded but persistent journal.
+- **Runs on:** The test Pi over SSH, with the known-good card nearby.
+- **You need:** Stage 1's [checkpoint](/kixetpi/guides/raspberry-pi-os/#checkpoint-and-troubleshooting) and baseline, and a written list of what the Pi must do.
+- **Ends with:** The [checkpoint](#checkpoint-and-recovery): a rebooted, working workload; a record of every change; and a new known-good backup.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -28,7 +35,7 @@ Complete the [base setup](/kixetpi/guides/raspberry-pi-os/) and its backup check
 | Tune swap and memory for small boards. | Measure the stock setup first. Defer changes until there is evidence of a problem. |
 | DietPi installers and `dietpi-*` tools. | Do not install or run them on this base. |
 
-The [DietPi installer documentation](https://dietpi.com/docs/hardware/#make-your-own-distribution) warns that its conversion deletes existing APT software and user data. Do not run `dietpi-installer`, add DietPi repositories, or copy `/boot/dietpi.txt` and its scripts into Raspberry Pi OS. We are borrowing operating practices, not performing that conversion.
+The [DietPi installer documentation](https://dietpi.com/docs/hardware/#make-your-own-distribution) warns that its conversion deletes existing APT software and user data. Do not run `dietpi-installer`, add DietPi repositories, or copy `/boot/dietpi.txt` and its scripts into Raspberry Pi OS. We are borrowing operating practices, not performing that conversion. [Why adapt instead of convert](/kixetpi/explanation/adapt-not-convert/) explains the reasoning.
 
 ## 1. Define the workload and measure
 

@@ -21,7 +21,22 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Understand the approach',
+					items: [
+						{ label: 'Why adapt instead of convert', slug: 'explanation/adapt-not-convert' },
+						{ label: 'Security, performance, and recovery limits', slug: 'explanation/limits' },
+					],
+				},
+				{
 					label: 'Reference',
+					items: [
+						{ label: 'Conventions and command effects', slug: 'reference/conventions' },
+						{ label: 'Walkthrough record', slug: 'reference/walkthrough-record' },
+						{ label: 'Versions and sources', slug: 'reference/versions' },
+					],
+				},
+				{
+					label: 'Agents and testing',
 					items: [
 						{ label: 'Assisting with an AI agent', slug: 'reference/agent-assistance' },
 						{ label: 'VM command test run', slug: 'reference/vm-test-run' },
