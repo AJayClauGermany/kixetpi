@@ -34,6 +34,8 @@ The site follows the [Diátaxis](https://diataxis.fr/) framework loosely: the fo
 | [`reference/agent-assistance.md`](src/content/docs/reference/agent-assistance.md) | How-to (agents) | Agent reading path, decision gates, and resumable handoff. |
 | `reference/vm-test-run.md` | How-to and test log | Debian ARM64 VM command preflight and its recorded trials. |
 
+The build also emits [`llms.txt`](https://llmstxt.org/) files for AI agents through the [`starlight-llms-txt`](https://github.com/delucis/starlight-llms-txt) plugin: `/llms.txt` (entry point pointing to the agent companion), `/llms-full.txt`, `/llms-small.txt` (without the VM test run), and topic bundles under `/_llms-txt/`. Their summary, agent rules, and bundle contents are configured in `astro.config.mjs`.
+
 Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name; the sidebar order is set in `astro.config.mjs`.
 
 ## Commands

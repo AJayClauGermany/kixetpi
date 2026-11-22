@@ -12,7 +12,7 @@ The site uses [Diátaxis](https://diataxis.fr/) as a guide, not a rigid split. P
 - **Explanation** (`src/content/docs/explanation/`): why the project borrows practices instead of converting distributions, ownership, and the limits of security, performance, recovery, and test claims.
 - **Reference** (`src/content/docs/reference/`): conventions, command effects, the walkthrough record template, and pinned versions. Agent and VM pages also live here for stable URLs, but appear under "Agents and testing" in the sidebar.
 
-When adding a page, also add it to the sidebar in `astro.config.mjs` and the content table in `README.md`. When re-checking upstream sources, update the affected guide's "Sources and review status" section and `reference/versions.md` together. `raspberrypi.com` and `github.com` may block automated fetchers; the Raspberry Pi documentation's AsciiDoc sources on `raw.githubusercontent.com` are an equivalent check.
+When adding a page, also add it to the sidebar in `astro.config.mjs` and the content table in `README.md`. The `starlight-llms-txt` plugin in `astro.config.mjs` generates `/llms.txt` (the agent entry point) and plain-text bundles; add new pages to the matching `customSets` entry and keep its `details` text consistent with the agent companion. When re-checking upstream sources, update the affected guide's "Sources and review status" section and `reference/versions.md` together. `raspberrypi.com` and `github.com` may block automated fetchers; the Raspberry Pi documentation's AsciiDoc sources on `raw.githubusercontent.com` are an equivalent check.
 
 ## Development
 

@@ -14,7 +14,7 @@ These instructions combine upstream documentation with proposed integration choi
 | Stage | What you will do | What stays unchanged |
 | --- | --- | --- |
 | [1. Set up Raspberry Pi OS Lite](/kixetpi/guides/raspberry-pi-os/) | Choose an image, establish access, update, and record a baseline. | The official Raspberry Pi OS base. |
-| [2. Adapt DietPi practices](/kixetpi/guides/dietpi/) | Audit services and packages, keep only what you need, and set a modest log budget. | No DietPi conversion, repositories, or management scripts. |
+| [2. Adapt DietPi practices](/kixetpi/guides/dietpi/) | Audit services and packages, keep only what you need, and choose how logs are kept. | No DietPi conversion, repositories, or management scripts. |
 | [3. Adapt Kicksecure practices](/kixetpi/guides/kicksecure/) | Reduce remote exposure, verify updates, and check available confinement. | No Kicksecure conversion, replacement kernel, or boot stack. |
 | [4. Add Nix optionally](/kixetpi/guides/nix/) | Declare a small user package set with Home Manager. | APT continues to own the operating system. |
 
@@ -59,7 +59,7 @@ The first target is a headless Pi on a trusted home network, administered from a
 
 ## Working with an AI agent
 
-The four stages are written for you to follow directly. If an AI agent is helping, give it the [agent assistance companion](/kixetpi/reference/agent-assistance/) for a reading path, decision checkpoints, and handoff notes. It supplements these instructions without turning them into an unattended setup script.
+The four stages are written for you to follow directly. If an AI agent is helping, give it the [agent assistance companion](/kixetpi/reference/agent-assistance/) for a reading path, decision checkpoints, and handoff notes. It supplements these instructions without turning them into an unattended setup script. Agents that read the site directly can start from [`/kixetpi/llms.txt`](/kixetpi/llms.txt), which points to the companion and to plain-text bundles of these pages.
 
 Before a hardware walkthrough, the [VM command test run](/kixetpi/reference/vm-test-run/) describes a Lima-based Debian ARM64 preflight on an Apple Silicon Mac. It can expose command and integration errors, but does not validate Raspberry Pi hardware or replace the stages' checkpoints.
 

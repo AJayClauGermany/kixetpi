@@ -11,6 +11,21 @@ Use this companion when an AI agent helps an operator follow KixetPi, whether th
 The combined procedure has not passed a Raspberry Pi hardware test. Reading a guide or having a shell tool does not authorize changes to a machine. Confirm the operator's target and requested scope before using tools. Never run the Pi's system commands on the computer hosting this documentation project.
 :::
 
+## Machine-readable entry points
+
+The site publishes an [`llms.txt`](https://llmstxt.org/) index at [`/kixetpi/llms.txt`](/kixetpi/llms.txt). It summarizes the rules on this page and links plain-text bundles generated from the same Markdown source:
+
+| File | Contents | Use it when |
+| --- | --- | --- |
+| [`llms.txt`](/kixetpi/llms.txt) | Project summary, agent rules, and links to every bundle. | First contact with the site. |
+| [`_llms-txt/agent-essentials.txt`](/kixetpi/_llms-txt/agent-essentials.txt) | Overview, this companion, conventions and command effects, limits, versions, and the walkthrough record. | Orienting before any task. |
+| [`_llms-txt/stage-guides.txt`](/kixetpi/_llms-txt/stage-guides.txt) | Stages 1–4 in order. | Proposing or executing a step. |
+| [`_llms-txt/explanation.txt`](/kixetpi/_llms-txt/explanation.txt) | Why the project adapts rather than converts, and the limits of its claims. | Explaining a constraint to the operator. |
+| [`_llms-txt/vm-command-test-run.txt`](/kixetpi/_llms-txt/vm-command-test-run.txt) | The Debian VM preflight and its recorded trials. | Only for VM command testing. |
+| [`llms-small.txt`](/kixetpi/llms-small.txt) / [`llms-full.txt`](/kixetpi/llms-full.txt) | Every page except the VM test run, or every page. | A single-file load when context allows. |
+
+The bundles keep each code block's `title="..."`, which names the machine and session where it runs, and the `:::caution` warnings. Links in them that start with `/kixetpi/` are relative to the published site. The bundles are only as current as the last site deployment; in a repository checkout, read `src/content/docs/` directly.
+
 ## Start with the right context
 
 1. Read the overview's [safety rules](/kixetpi/#use-these-instructions-safely), the [ownership table](/kixetpi/explanation/adapt-not-convert/#who-owns-which-part-of-the-system), and the [security, performance, and recovery limits](/kixetpi/explanation/limits/).
