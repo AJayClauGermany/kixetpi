@@ -9,6 +9,13 @@ You can stop after [hardening](/kixetpi/guides/kicksecure/) and use APT alone. T
 This path targets a compatible Pi running 64-bit Raspberry Pi OS Lite. It adds a privileged background service, build accounts, and a package store. You must update Nix and its packages separately from APT. We have not measured resource use or tested Home Manager activation on a Pi. Use the separate test Pi, not the documentation computer.
 :::
 
+## At a glance
+
+- **Goal:** A multi-user Nix installation and a small, pinned Home Manager configuration for your user tools, with a tested rollback.
+- **Runs on:** The test Pi as your ordinary user; the installer requests `sudo` itself.
+- **You need:** Stage 3's [checkpoint](/kixetpi/guides/kicksecure/#checkpoint), 64-bit userspace (`arm64`), spare RAM and storage, and a fresh pre-Nix card backup.
+- **Ends with:** The [checkpoint](#checkpoint): recorded versions, locks, and generations, plus a tested package change and rollback.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -28,7 +35,7 @@ The division is by responsibility, not by eliminating every duplicated library. 
 
 Keep system-service executables on explicit APT-managed paths. Do not use NixOS modules, `nixos-rebuild`, Home Manager system-service substitutes, or a Nix-managed login shell in this initial setup. The example below manages only two user tools and the Home Manager command itself.
 
-Nix is not a security boundary for running programs. A malicious Nix package or Home Manager activation can act with your user's permissions. A privileged daemon does not make the software it supplies trustworthy. Use only reviewed configuration and trusted package sources; never run Home Manager with `sudo`.
+Nix is not a security boundary for running programs. A malicious Nix package or Home Manager activation can act with your user's permissions. A privileged daemon does not make the software it supplies trustworthy. Use only reviewed configuration and trusted package sources; never run Home Manager with `sudo`. See [who owns which part of the system](/kixetpi/explanation/adapt-not-convert/#who-owns-which-part-of-the-system) for the full division of responsibility.
 
 ## 1. Check architecture and capacity
 
@@ -52,13 +59,13 @@ CPU support alone is not enough. Evaluating Nix configuration consumes memory. P
 
 Begin on the proposed Pi 4 test target with free space beyond the base installation, and record the actual cost. On a 512 MB board, start with the APT-only result instead. These are project choices, not an asserted universal Nix minimum. If the Pi is already swapping heavily or nearly full, stop here. Do not disable swap to make the baseline look smaller.
 
-**Reference:** [Nix supported platforms](https://nixos.org/manual/nix/stable/installation/supported-platforms.html), [Nixpkgs platform tiers](https://nixos.org/manual/nixpkgs/stable/#sec-platform-breakdown), [versioned installer platform choices](https://releases.nixos.org/nix/nix-2.35.2/install), and the installed `dpkg(1)`, `getconf(1)`, `uname(1)`, `free(1)`, `swapon(8)`, and `df(1)` manuals for the checks.
+**Reference:** [Nix supported platforms](https://nix.dev/manual/nix/2.35/installation/supported-platforms.html), [Nixpkgs platform tiers](https://nixos.org/manual/nixpkgs/stable/#sec-platform-breakdown), [versioned installer platform choices](https://releases.nixos.org/nix/nix-2.35.6/install), and the installed `dpkg(1)`, `getconf(1)`, `uname(1)`, `free(1)`, `swapon(8)`, and `df(1)` manuals for the checks.
 
 If `/nix` or a Nix installation already exists, stop and inspect its installer, configuration, users, and profiles. This page assumes no existing Nix installation and does not describe an in-place installer migration.
 
 ## 2. Review and install upstream Nix
 
-Use the [official multi-user installation procedure](https://nixos.org/manual/nix/stable/installation/installing-binary.html) for Linux with systemd. Do not mix installers or migrate an existing Nix installation using these steps.
+Use the [official multi-user installation procedure](https://nix.dev/manual/nix/2.35/installation/installing-binary.html) for Linux with systemd. Do not mix installers or migrate an existing Nix installation using these steps.
 
 Install prerequisites from your existing APT repositories if missing:
 
@@ -71,14 +78,14 @@ sudo apt install ca-certificates curl xz-utils
 
 ### Download and inspect
 
-This example uses Nix 2.35.2, the version reviewed for this draft. Check the [official release listing](https://releases.nixos.org/?prefix=nix/) and upstream documentation before use; select a newer supported version when needed. If that archive already exists in `~/kixetpi-installers`, stop and inspect it instead of overwriting your earlier copy.
+This example uses Nix 2.35.6, the latest patch release of the series reviewed for this draft. It includes the 2.35.3 security fixes, among them a multi-user installer fix for store-object ownership; do not use 2.35.2 or earlier from this series. Nix 2.36.0 was released in November 2026 and is what the live installer currently downloads. Check the [official release listing](https://releases.nixos.org/?prefix=nix/) and [Versions and sources](/kixetpi/reference/versions/) before use, and select a newer supported patch release when needed. Read the manual for the version you install; the links on this page target the [2.35 manual](https://nix.dev/manual/nix/2.35/). If that archive already exists in `~/kixetpi-installers`, stop and inspect it instead of overwriting your earlier copy.
 
 In the same terminal session, download the versioned archive without executing it:
 
 ```sh title="Pi: download a versioned archive for review"
 mkdir -p ~/kixetpi-installers
 cd ~/kixetpi-installers
-NIX_VERSION=2.35.2
+NIX_VERSION=2.35.6
 NIX_ARCHIVE="nix-${NIX_VERSION}-aarch64-linux.tar.xz"
 curl --fail --location --proto '=https' --tlsv1.2 \
   "https://releases.nixos.org/nix/nix-${NIX_VERSION}/${NIX_ARCHIVE}" \
@@ -86,11 +93,11 @@ curl --fail --location --proto '=https' --tlsv1.2 \
 sha256sum "$NIX_ARCHIVE"
 ```
 
-Compare the complete SHA-256 value with the [published checksum for this exact archive](https://releases.nixos.org/nix/nix-2.35.2/nix-2.35.2-aarch64-linux.tar.xz.sha256). For another version, use its matching `.sha256` file. Stop if it differs or the expected checksum is unavailable.
+Compare the complete SHA-256 value with the [published checksum for this exact archive](https://releases.nixos.org/nix/nix-2.35.6/nix-2.35.6-aarch64-linux.tar.xz.sha256). For another version, use its matching `.sha256` file. Stop if it differs or the expected checksum is unavailable.
 
 Keep the archive, version, and checksum with the walkthrough record. A checksum from the same source verifies download integrity, not independent trust in that source.
 
-**Reference:** [Nix binary-tarball procedure](https://nix.dev/manual/nix/latest/installation/installing-binary.html#installing-from-a-binary-tarball), [versioned installer archive and hash](https://releases.nixos.org/nix/nix-2.35.2/install), and [curl options](https://curl.se/docs/manpage.html).
+**Reference:** [Nix binary-tarball procedure](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#installing-from-a-binary-tarball), [versioned installer archive and hash](https://releases.nixos.org/nix/nix-2.35.6/install), and [curl options](https://curl.se/docs/manpage.html).
 
 After the checksum matches, list and unpack the archive as your normal user, not as root. Use a fresh review directory and inspect the included installer scripts:
 
@@ -106,7 +113,7 @@ less install-systemd-multi-user.sh
 
 Review the scripts they invoke too, especially the proposed sudo, account, systemd, and shell-profile changes. If a selected release has a different layout, follow its own instructions rather than executing an unreviewed replacement. Reading the download wrapper alone would not review these scripts, and inspecting scripts does not prove that the included binaries are safe.
 
-**Reference:** [Nix binary-tarball installation](https://nix.dev/manual/nix/latest/installation/installing-binary.html#installing-from-a-binary-tarball) and the installed `tar(1)` and `less(1)` manuals.
+**Reference:** [Nix binary-tarball installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#installing-from-a-binary-tarball) and the installed `tar(1)` and `less(1)` manuals.
 
 ### Install the reviewed archive
 
@@ -118,9 +125,11 @@ Do not overwrite an existing `/etc/nix/nix.conf`, disable signature checks, add 
 ./install --daemon
 ```
 
+`--daemon` is required: on Linux, this script still defaults to a single-user installation. The installer also adds a root `nixpkgs-unstable` channel by default. This flake-based guide does not use it; the installer's `--no-channel-add` option skips it, but that variation has not been tested here. Do not add `--yes`, which accepts every installer prompt without review.
+
 The daemon is a privileged background service that manages the shared store using separate build accounts. Permission to use it is not the same as being a `trusted-users` member; that setting grants capabilities that should be treated as root-equivalent.
 
-**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/latest/installation/installing-binary.html#multi-user-installation) and [daemon trust settings](https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-trusted-users).
+**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#multi-user-installation) and [daemon trust settings](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html#conf-trusted-users).
 
 Log out and open a new SSH session, then check:
 
@@ -132,7 +141,7 @@ systemctl status nix-daemon.socket nix-daemon.service --no-pager
 
 The service can be socket-activated, so an idle service alone is not proof of failure. If the command is missing, follow the installer's shell initialization instructions. Do not reinstall repeatedly or symlink binaries into `/usr/bin`.
 
-**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/latest/installation/installing-binary.html#multi-user-installation) and the installed `systemctl(1)` manual.
+**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#multi-user-installation) and the installed `systemctl(1)` manual.
 
 ## 3. Enable the commands for this user
 
@@ -151,7 +160,7 @@ cores = 1
 
 A flake describes a Nix project's inputs and outputs. Flakes and the newer command interface still require experimental feature flags, even with a stable Nixpkgs release. The build limits reduce how much work builds request to run in parallel. They do not limit evaluation memory or guarantee that builds fit in the Pi's available resources.
 
-**Reference:** [Nix configuration files and build limits](https://nixos.org/manual/nix/stable/command-ref/conf-file.html#configuration-file).
+**Reference:** [Nix configuration files and build limits](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html#configuration-file).
 
 Keep the official cache and its signature checks. Do not accept unfamiliar flake-provided configuration or additional trusted keys just to make a command proceed. Stop if packages require large local builds on this board.
 
@@ -163,13 +172,13 @@ nix store info --store daemon
 
 If access is denied, inspect the installer's daemon configuration and its `allowed-users` setting. Permission to connect is distinct from the powerful `trusted-users` setting. Do not fix access by granting extra daemon trust.
 
-**Reference:** [Nix store connectivity check](https://nix.dev/manual/nix/latest/command-ref/new-cli/nix3-store-info.html) and [daemon allowed users](https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-allowed-users).
+**Reference:** [Nix store connectivity check](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-store-info.html) and [daemon allowed users](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html#conf-allowed-users).
 
 ## 4. Declare a small home configuration
 
 [Home Manager](https://nix-community.github.io/home-manager/) can run standalone on a non-NixOS distribution. It is optional community software on top of Nix, with its own release and update cycle.
 
-The example pairs Nixpkgs `nixos-26.05` with Home Manager `release-26.05`. The name of the Nixpkgs branch does not turn the host into NixOS. Before first use, confirm that both release branches exist and remain maintained. For a newer release, update both together after reading their release notes; do not mix a stable Home Manager release with an arbitrary development Nixpkgs branch.
+The example pairs Nixpkgs `nixos-26.05` with Home Manager `release-26.05`. NixOS 26.05 reaches end of support on 31 December 2026; plan to move both inputs to the 26.11 branches once they exist, after reading their release notes. The name of the Nixpkgs branch does not turn the host into NixOS. Before first use, confirm that both release branches exist and remain maintained. For a newer release, update both together after reading their release notes; do not mix a stable Home Manager release with an arbitrary development Nixpkgs branch.
 
 Create a new configuration directory, or stop and back up any existing Home Manager configuration:
 
@@ -223,7 +232,7 @@ The configuration name `pi` is only an output label, not a required login name. 
 
 `home.stateVersion` selects compatibility defaults for stateful settings. It does not pin packages or update Home Manager. Set it for the initial configuration and do not raise it automatically during later upgrades.
 
-**Reference:** [Home Manager standalone flakes](https://nix-community.github.io/home-manager/nix-flakes/standalone.html), [configuration example](https://nix-community.github.io/home-manager/usage/configuration.html), and [Nix local flake paths](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html#path-like-syntax).
+**Reference:** [Home Manager standalone flakes](https://nix-community.github.io/home-manager/nix-flakes/standalone.html), [configuration example](https://nix-community.github.io/home-manager/usage/configuration.html), and [Nix local flake paths](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-flake.html#path-like-syntax).
 
 ## 5. Lock, build, and activate without sudo
 
@@ -236,7 +245,7 @@ nix flake lock
 
 `flake.lock` records exact revisions and content hashes for Nixpkgs and Home Manager. Release branch names move; the lock is what makes subsequent builds use the same inputs. Preserve all three files together. Do not invent hashes or copy an unrelated lock file from this website.
 
-**Reference:** [Nix flake lock](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake-lock.html) and [flake lock-file format](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html#lock-files).
+**Reference:** [Nix flake lock](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-flake-lock.html) and [flake lock-file format](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-flake.html#lock-files).
 
 Inspect the proposed build before starting it:
 
@@ -247,7 +256,7 @@ nix build .#homeConfigurations.pi.activationPackage --dry-run
 
 Expect some small local builds for the generated home environment, even when package binaries come from the cache. A long list of compilers or large application builds is a reason to stop on a small Pi. The dry run still evaluates the configuration and does not predict peak memory usage.
 
-**Reference:** [Nix build dry runs](https://nix.dev/manual/nix/latest/command-ref/new-cli/nix3-build.html#opt-dry-run) and [Home Manager activation package](https://nix-community.github.io/home-manager/internals/activation.html).
+**Reference:** [Nix build dry runs](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-build.html#opt-dry-run) and [Home Manager activation package](https://nix-community.github.io/home-manager/internals/activation.html).
 
 Build first, without activating:
 
@@ -267,7 +276,7 @@ cd ~/.config/home-manager
 ./result/activate
 ```
 
-This sets up Home Manager from the input recorded in `flake.lock`, rather than a second installer whose version can change. Activation creates links and applies declared user settings.
+This sets up Home Manager from the input recorded in `flake.lock`, rather than a second installer whose version can change. Run without arguments, the activation script uses Home Manager's legacy activation mode, which also creates the first profile generation. Home Manager's own standalone instructions use `nix run home-manager/release-26.05 -- init --switch` instead; this guide keeps the separate build and activation steps so you can review the build first. Activation creates links and applies declared user settings.
 
 This example does not manage your shell configuration or change your login shell.
 
@@ -347,7 +356,7 @@ Only after a successful build and review of its output, run `home-manager switch
 
 A pinned revision stays old until you update it. APT does not update Nix-provided software. Check release support and the Nix installation's own upgrade procedure as part of this routine.
 
-**Reference:** [Home Manager flake updates](https://nix-community.github.io/home-manager/usage/updating.html) and [Nix flake update](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake-update.html).
+**Reference:** [Home Manager flake updates](https://nix-community.github.io/home-manager/usage/updating.html) and [Nix flake update](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-flake-update.html).
 
 ### Rollback
 
@@ -371,7 +380,7 @@ Do not delete `/nix/store` files by hand. After checking which generations you s
 
 Avoid `nix-collect-garbage -d` during the walkthrough, especially with sudo, which can affect profiles beyond your own. Removing old generations and their store objects removes local rollback options. Keep both configuration backups and retained generations until you have tested the new environment.
 
-**Reference:** [Home Manager generation management](https://github.com/nix-community/home-manager/blob/release-26.05/home-manager/home-manager) and [Nix garbage collection](https://nixos.org/manual/nix/stable/command-ref/nix-collect-garbage.html).
+**Reference:** [Home Manager generation management](https://github.com/nix-community/home-manager/blob/release-26.05/home-manager/home-manager) and [Nix garbage collection](https://nix.dev/manual/nix/2.35/command-ref/nix-collect-garbage.html).
 
 ## Troubleshooting and opting out
 
@@ -400,7 +409,7 @@ If you have expanded the configuration beyond these packages, follow that versio
 
 ### Remove Nix itself
 
-Removing Home Manager does not uninstall Nix. Follow the [official multi-user Nix uninstall instructions](https://nixos.org/manual/nix/stable/installation/uninstall.html) for your installer. Do not start with `rm -rf /nix`, and do not assume uninstalling removes every user data file.
+Removing Home Manager does not uninstall Nix. Follow the [official multi-user Nix uninstall instructions](https://nix.dev/manual/nix/2.35/installation/uninstall.html) for your installer. Do not start with `rm -rf /nix`, and do not assume uninstalling removes every user data file.
 
 Uninstallation includes daemon units, shell initialization, build accounts, configuration, and store cleanup. Restoring the pre-Nix test-card image is the clearest return to the earlier baseline.
 
@@ -412,16 +421,17 @@ If those checks fail, the first three stages remain usable without this layer. R
 
 ## Sources and review status
 
-Reviewed against upstream sources on 28 September 2026. The example configuration and commands remain untested on Raspberry Pi hardware; the first lock file must be generated and validated during that test.
+Reviewed against upstream sources on 22 November 2026 (previously 28 September 2026): the pin moved from 2.35.2 to 2.35.6 for security fixes, and manual links now target the matching 2.35 manual. The example configuration and commands remain untested on Raspberry Pi hardware; the first lock file must be generated and validated during that test.
 
 For ordinary shell and file operations, use the Pi's installed `man bash`, `man mkdir`, `man mktemp`, `man sha256sum`, `man nano`, and `man du` manuals. The [Debian manual index](https://manpages.debian.org/trixie/index.html) is an online alternative.
 
-- [Nix supported platforms](https://nixos.org/manual/nix/stable/installation/supported-platforms.html).
+- [Changes from Nix 2.35.2 to 2.35.3](https://github.com/NixOS/nix/compare/2.35.2...2.35.3), including the merged security advisory fixes and the multi-user installer ownership fix behind the 2.35.6 pin, and [NixOS release support dates](https://endoflife.date/nixos).
+- [Nix supported platforms](https://nix.dev/manual/nix/2.35/installation/supported-platforms.html).
 - [Nixpkgs platform tiers and binary coverage](https://nixos.org/manual/nixpkgs/stable/#sec-platform-breakdown) and [the live installer source](https://nixos.org/nix/install).
-- [Official binary installation](https://nixos.org/manual/nix/stable/installation/installing-binary.html), [2.35.2 aarch64 archive checksum](https://releases.nixos.org/nix/nix-2.35.2/nix-2.35.2-aarch64-linux.tar.xz.sha256), and [multi-user uninstall](https://nixos.org/manual/nix/stable/installation/uninstall.html).
-- [Nix configuration, sandboxing, and daemon trust](https://nixos.org/manual/nix/stable/command-ref/conf-file.html).
-- [Nix store connectivity check](https://nix.dev/manual/nix/latest/command-ref/new-cli/nix3-store-info.html).
-- [Nix flakes and lock files](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-flake.html) and [garbage collection](https://nixos.org/manual/nix/stable/command-ref/nix-collect-garbage.html).
+- [Official binary installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html), [2.35.6 aarch64 archive checksum](https://releases.nixos.org/nix/nix-2.35.6/nix-2.35.6-aarch64-linux.tar.xz.sha256), and [multi-user uninstall](https://nix.dev/manual/nix/2.35/installation/uninstall.html).
+- [Nix configuration, sandboxing, and daemon trust](https://nix.dev/manual/nix/2.35/command-ref/conf-file.html).
+- [Nix store connectivity check](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-store-info.html).
+- [Nix flakes and lock files](https://nix.dev/manual/nix/2.35/command-ref/new-cli/nix3-flake.html) and [garbage collection](https://nix.dev/manual/nix/2.35/command-ref/nix-collect-garbage.html).
 - [Home Manager manual](https://nix-community.github.io/home-manager/), including standalone installation, flakes, generations, and `home.stateVersion`.
 - [Home Manager rollback instructions](https://nix-community.github.io/home-manager/usage/rollbacks.html) and [26.05 command implementation](https://github.com/nix-community/home-manager/blob/release-26.05/home-manager/home-manager).
 - [Home Manager release branches](https://github.com/nix-community/home-manager/branches) and [Nixpkgs repository](https://github.com/NixOS/nixpkgs).

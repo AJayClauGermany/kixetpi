@@ -11,15 +11,44 @@ Use this companion when an AI agent helps an operator follow KixetPi, whether th
 The combined procedure has not passed a Raspberry Pi hardware test. Reading a guide or having a shell tool does not authorize changes to a machine. Confirm the operator's target and requested scope before using tools. Never run the Pi's system commands on the computer hosting this documentation project.
 :::
 
+## Machine-readable entry points
+
+The site publishes an [`llms.txt`](https://llmstxt.org/) index at [`/kixetpi/llms.txt`](/kixetpi/llms.txt). It summarizes the rules on this page and links plain-text bundles generated from the same Markdown source:
+
+| File | Contents | Use it when |
+| --- | --- | --- |
+| [`llms.txt`](/kixetpi/llms.txt) | Project summary, agent rules, and links to every bundle. | First contact with the site. |
+| [`_llms-txt/agent-essentials.txt`](/kixetpi/_llms-txt/agent-essentials.txt) | Overview, this companion, conventions and command effects, limits, versions, and the walkthrough record. | Orienting before any task. |
+| [`_llms-txt/stage-guides.txt`](/kixetpi/_llms-txt/stage-guides.txt) | Stages 1–4 in order. | Proposing or executing a step. |
+| [`_llms-txt/explanation.txt`](/kixetpi/_llms-txt/explanation.txt) | Why the project adapts rather than converts, and the limits of its claims. | Explaining a constraint to the operator. |
+| [`_llms-txt/vm-command-test-run.txt`](/kixetpi/_llms-txt/vm-command-test-run.txt) | The Debian VM preflight and its recorded trials. | Only for VM command testing. |
+| [`llms-small.txt`](/kixetpi/llms-small.txt) / [`llms-full.txt`](/kixetpi/llms-full.txt) | Every page except the VM test run, or every page. | A single-file load when context allows. |
+
+The bundles keep each code block's `title="..."`, which names the machine and session where it runs, and the `:::caution` warnings. Links in them that start with `/kixetpi/` are relative to the published site. The bundles are only as current as the last site deployment; in a repository checkout, read `src/content/docs/` directly.
+
 ## Start with the right context
 
-1. Read the overview's [scope and limits](/kixetpi/#scope-and-limits), [ownership table](/kixetpi/#what-can-be-carried-over), and [safety and recovery rules](/kixetpi/#use-these-instructions-safely).
+1. Read the overview's [safety rules](/kixetpi/#use-these-instructions-safely), the [ownership table](/kixetpi/explanation/adapt-not-convert/#who-owns-which-part-of-the-system), and the [security, performance, and recovery limits](/kixetpi/explanation/limits/).
 2. Establish whether the operator wants an explanation, a proposed next step, or execution on a specific test Pi. For explanation-only work, no target access is needed. For execution, distinguish the documentation computer, administration computer, Pi over SSH, and Pi local console. Two roles may share a computer, but never infer this from the working directory.
 3. Obtain the Pi model, image/release, userspace and kernel architecture, workload, access method, last completed checkpoint, and recovery readiness. Use existing records and authorized inspection before asking for facts already available. Stage 1's [base identification](/kixetpi/guides/raspberry-pi-os/#5-confirm-the-release-and-update-normally) supplies the commands; `uname -m` alone is insufficient.
 4. Agree on a bounded change and its recovery plan. Inspection can proceed within the granted scope; a broad request to "make it smaller" is not approval to remove arbitrary packages. Obtain explicit confirmation of the target and consequences before erasing storage, changing access controls, deleting recovery history, or rebooting. If the harness cannot preserve the required session or present an interactive prompt, hand that step to the operator instead of suppressing it.
 5. Select the next applicable step below. Read the whole section, including text after its code blocks, before proposing a command. Do not replay completed changes just because a new session started.
 
 Keep Raspberry Pi OS, its repositories, kernel, firmware, networking, and updates. DietPi and Kicksecure are sources of selected practices, not conversion targets. Nix is optional and does not own the base OS. Do not translate this guide into DietPi installers, Kicksecure metapackages, NixOS modules, or a bulk hardening script.
+
+## Know which page answers which question
+
+The site follows the [Diátaxis](https://diataxis.fr/) framework. Use the page type that matches the question instead of inferring procedure from explanation or vice versa:
+
+| Question | Page type | Pages |
+| --- | --- | --- |
+| What should be done next, and how? | How-to guide (authoritative procedure) | [Stages 1–4](/kixetpi/#follow-the-four-stages) |
+| Where does a block run, what does a placeholder mean, does a command change state? | Reference | [Conventions and command effects](/kixetpi/reference/conventions/) |
+| Which upstream release, branch, or manual suite is pinned, and when was it checked? | Reference | [Versions and sources](/kixetpi/reference/versions/), each stage's "Sources and review status" |
+| How should results be recorded? | Reference | [Walkthrough record](/kixetpi/reference/walkthrough-record/), [agent handoff](#leave-a-resumable-record) |
+| Why is something forbidden, or what can a result claim? | Explanation | [Why adapt instead of convert](/kixetpi/explanation/adapt-not-convert/), [limits](/kixetpi/explanation/limits/) |
+
+Explanation pages justify the procedure; they never authorize a step the stage guide does not contain.
 
 ## Choose the next step
 
@@ -29,7 +58,7 @@ Keep Raspberry Pi OS, its repositories, kernel, firmware, networking, and update
 | Existing installation or unknown progress | [Identify the base and review updates](/kixetpi/guides/raspberry-pi-os/#5-confirm-the-release-and-update-normally) and [baseline](/kixetpi/guides/raspberry-pi-os/#6-record-an-unchanged-baseline) | Confirm actual state rather than assuming a fresh image. Stop for a non-Trixie release or incompatible prerequisites; do not rewrite repository codenames. |
 | Base checkpoint complete | [Workload and measurements](/kixetpi/guides/dietpi/#1-define-the-workload-and-measure), then [one service trial](/kixetpi/guides/dietpi/#2-trial-one-unused-service) | Skip Bluetooth if absent or needed. Trial a temporary stop before considering persistence. No list of universally safe removals exists. |
 | A specific package might be unused | [Removal review](/kixetpi/guides/dietpi/#3-review-package-removal-without-a-bulk-purge) | Read the complete simulation and actual APT prompt. Stop on unexplained dependencies or removal of protected components. No candidate is also a valid outcome. |
-| Considering logs or memory savings | [Journal budget](/kixetpi/guides/dietpi/#4-bound-logs-without-discarding-them-at-reboot) and [stock swap](/kixetpi/guides/dietpi/#5-keep-the-stock-swap-setup-for-now) | Export needed logs before retention changes. Keep stock swap. Complete the [reduction checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), even if measured savings are negligible. |
+| Considering logs or memory savings | [Logging mode](/kixetpi/guides/dietpi/#4-decide-whether-logs-survive-a-reboot) and [stock swap](/kixetpi/guides/dietpi/#5-keep-the-stock-swap-setup-for-now) | The stock Pi OS journal is RAM-only; a persistent journal is an opt-in choice that adds storage writes. Confirm the effective `Storage` setting before claiming either. Export needed logs before retention changes. Keep stock `rpi-swap`. Complete the [reduction checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), even if measured savings are negligible. |
 | Reduction checkpoint complete | [Privileges](/kixetpi/guides/kicksecure/#1-check-updates-and-administrative-privileges), [SSH](/kixetpi/guides/kicksecure/#2-verify-key-only-ssh-before-disabling-passwords), and [firewall prerequisites](/kixetpi/guides/kicksecure/#3-add-a-firewall-for-a-simple-headless-pi) | Sudo password changes are optional. Prove fresh key-only SSH and sudo access before SSH policy changes. UFW's example requires a fresh, simple non-routing host and local console activation. Existing firewall rules, containers, or a VPN require stopping this example, not resetting them. |
 | Checking confinement | [AppArmor discovery](/kixetpi/guides/kicksecure/#4-check-apparmor-rather-than-assume-confinement) and [application isolation](/kixetpi/guides/kicksecure/#5-trial-isolation-for-a-service-you-understand) | Record absent AppArmor as unavailable. Skip the isolation trial without a suitable custom application. Do not tune boot parameters or experiment on SSH/network units to improve a score. |
 | Hardening steps reviewed | [Update routine](/kixetpi/guides/kicksecure/#6-keep-an-update-routine) and [hardening checkpoint](/kixetpi/guides/kicksecure/#checkpoint) | Record applied and skipped controls, test the workload and fresh access after reboot, and preserve a working backup. Stopping here with APT alone is a complete path. |
@@ -37,7 +66,7 @@ Keep Raspberry Pi OS, its repositories, kernel, firmware, networking, and update
 | Nix installed and daemon access verified | [User configuration](/kixetpi/guides/nix/#3-enable-the-commands-for-this-user), [Home Manager declaration](/kixetpi/guides/nix/#4-declare-a-small-home-configuration), then [lock, build, activate](/kixetpi/guides/nix/#5-lock-build-and-activate-without-sudo) | Check current release support and matching inputs. Review the build preview, build successfully, then activate separately as the ordinary user. The first activation has no prior generation to roll back to. |
 | Nix maintenance or failure | [Changes and rollback](/kixetpi/guides/nix/#6-add-remove-update-and-roll-back), [opting out](/kixetpi/guides/nix/#troubleshooting-and-opting-out), and [checkpoint](/kixetpi/guides/nix/#checkpoint) | Preserve configuration, lock file, and known-good generations. A Home Manager rollback neither restores arbitrary data nor uninstalls Nix. Recheck base access and APT as well as user tools. |
 
-For repository readers, `/kixetpi/guides/NAME/#heading` means `src/content/docs/guides/NAME.md`, at that heading; `/kixetpi/#heading` means `src/content/docs/index.md`. This companion is `src/content/docs/reference/agent-assistance.md`. Read source Markdown if the website is unavailable; do not require a development server just to locate a step.
+For repository readers, `/kixetpi/SECTION/NAME/#heading` means `src/content/docs/SECTION/NAME.md` at that heading (for example `guides/dietpi.md` or `explanation/limits.md`); `/kixetpi/#heading` means `src/content/docs/index.md`. This companion is `src/content/docs/reference/agent-assistance.md`. Read source Markdown if the website is unavailable; do not require a development server just to locate a step.
 
 ## Use evidence rather than remembered defaults
 
@@ -69,21 +98,12 @@ Retain a working SSH session separately from fresh-login tests. Do not assume an
 
 ## Look up command effects
 
-This is a lookup table, not a sequence to execute. Read the linked guide section before using any listed command. "Inspection" describes the intended configuration effect, not a guarantee of zero I/O: sudo can prompt or log access, and diagnostic programs can read sensitive details.
+Use [Conventions and command effects](/kixetpi/reference/conventions/#command-effects) to classify each command as inspection or mutation, and to find the stage section and manual it belongs to. That table is shared with human operators; read the linked guide section before using any listed command. These agent-specific traps apply on top of it:
 
-| Commands or family | Effect and decision trap | Specific reference |
-| --- | --- | --- |
-| `free -h`, `df -h`, `swapon --show`, `vmstat 1 10` | Inspect resources. Compare available RAM under equivalent loads, not package count. `swapon --show` inspects; other `swapon` forms can change swap. The first `vmstat` row summarizes since boot. | [Measurement procedure](/kixetpi/guides/dietpi/#1-define-the-workload-and-measure), [free(1)](https://manpages.debian.org/trixie/procps/free.1.en.html), [vmstat(8)](https://manpages.debian.org/trixie/procps/vmstat.8.en.html) |
-| `systemctl status`, `is-active`, `is-enabled`, `cat` | Inspect activity, enablement, and unit contents. Inactive/absent units can return nonzero; inspect the text instead of starting them to obtain exit code zero. Enabled is not the same as running. | [Service trial](/kixetpi/guides/dietpi/#2-trial-one-unused-service), [systemctl(1)](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) |
-| `systemctl stop`, `disable`, `enable --now`, `reload`, `restart`, `daemon-reload` | Mutate different state: runtime, startup links, both startup and runtime, service configuration, process lifetime, or systemd's unit definitions. They are not interchangeable. `disable` may affect `Also=` units; it does not prevent all activation. | [Persistence and recovery](/kixetpi/guides/dietpi/#make-the-service-change-persistent), [systemctl(1)](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) |
-| `apt-cache policy`, `apt-get -s remove`, `apt-get -s dist-upgrade` | Inspect origins or simulate transactions. Review every affected package, not just the named candidate. A simulation does not run package hooks and can become stale. | [Removal gate](/kixetpi/guides/dietpi/#3-review-package-removal-without-a-bulk-purge), [apt-get(8)](https://manpages.debian.org/trixie/apt/apt-get.8.en.html) |
-| `apt update`, `apt full-upgrade`, `apt-get remove` | Write repository metadata, apply upgrades, or remove packages respectively. An index refresh is not an upgrade; `full-upgrade` may remove packages but is not an OS release conversion. | [Reviewed updates](/kixetpi/guides/raspberry-pi-os/#5-confirm-the-release-and-update-normally), [apt(8)](https://manpages.debian.org/trixie/apt/apt.8.en.html) |
-| `journalctl --disk-usage`, `--list-boots`, `--flush`; journal drop-in | First two inspect; `--flush` can transfer logs to disk. Applying smaller retention limits can destroy old logs. Removing the drop-in cannot recover discarded history. | [Logging procedure and manuals](/kixetpi/guides/dietpi/#4-bound-logs-without-discarding-them-at-reboot) |
-| `visudo -c`, `sshd -t`, `sshd -T -C ...`, fresh `ssh -S none ...` | Syntax, effective policy, and actual access are separate tests. `visudo -c` does not prove which grant wins; SSH `Match` conditions need actual connection details. A timeout is not evidence that password authentication was refused. | [Sudo checks](/kixetpi/guides/kicksecure/#optional-require-a-sudo-password), [SSH tests](/kixetpi/guides/kicksecure/#2-verify-key-only-ssh-before-disabling-passwords), [sshd(8)](https://manpages.debian.org/trixie/openssh-server/sshd.8.en.html) |
-| `ufw default`, `allow`, `--dry-run enable`, `enable`, `disable` | Staging rules writes configuration even while inactive. The dry run is not a reachability test. Enable at the console; disable is targeted recovery, not a reset of saved rules. | [Firewall gate and recovery](/kixetpi/guides/kicksecure/#3-add-a-firewall-for-a-simple-headless-pi), [ufw(8)](https://manpages.debian.org/trixie/ufw/ufw.8.en.html) |
-| `curl -o`, `sha256sum`, `tar -tJf`, `tar -xJf`, `./install --daemon` | Download writes a file; hashing and listing inspect it; extraction writes files; installation changes accounts, services, and profiles. Do not collapse review into `curl ... \| sh`. | [Versioned download, verification, and installer review](/kixetpi/guides/nix/#2-review-and-install-upstream-nix), [curl manual](https://curl.se/docs/manpage.html) |
-| `nix flake lock/update`, `nix build --dry-run`, `nix build`, `./result/activate` | Lock commands write inputs; dry runs evaluate and may fetch/cache data; builds write the store/result link; activation changes the home environment and runs code. These are distinct gates. | [Lock/build/activation procedure and manuals](/kixetpi/guides/nix/#5-lock-build-and-activate-without-sudo) |
-| `home-manager switch --rollback`, `nix-collect-garbage` | Rollback activates a retained generation; collection deletes unreachable store objects. Neither restores arbitrary user data. Deleting generations can permanently remove local recovery options. | [Rollback](/kixetpi/guides/nix/#rollback), [garbage collection limits](/kixetpi/guides/nix/#storage-and-garbage-collection) |
+- An inactive or absent unit can make `systemctl is-active` or `is-enabled` return nonzero. Inspect the printed state; do not start a unit to obtain exit code zero.
+- A simulation (`apt-get -s`), a dry run (`ufw --dry-run enable`, `nix build --dry-run`), or a syntax check (`visudo -c`, `sshd -t`) is not the real operation and does not prove access or reachability.
+- `curl ... | sh` collapses download, review, and installation into one step. Keep them separate as stage 4 shows.
+- "Inspection" describes the intended configuration effect, not zero I/O: `sudo` can prompt or log access, and diagnostic output can contain private addresses.
 
 For an unlisted option, use the reference following its code block or the installed manual. If you cannot explain its target, effect, expected result, and recovery limit, do not run it yet.
 
@@ -95,7 +115,7 @@ For an unlisted option, use the reference following its code block or the instal
 4. **Execute or hand off:** make one reviewed change. Preserve prompts and recovery sessions. For a manual step, report "awaiting operator result" rather than assuming it ran.
 5. **Verify:** inspect the exit status and output, then run the section's behavioral check. Nonzero is acceptable only when the documented expected condition actually occurred. A successful command is not proof of working SSH, a healthy application, or recovery.
 6. **Decide:** continue only on the required evidence; otherwise stop at the failing step, gather relevant diagnostics, and use its targeted recovery. Do not stack speculative fixes or delete unrelated drop-ins.
-7. **Record:** update the [walkthrough record](/kixetpi/#record-the-first-hardware-walkthrough) outside the test card. At a stage boundary, complete its checkpoint before advancing. Resume a later session from verified state, not a plan written before execution.
+7. **Record:** update the [walkthrough record](/kixetpi/reference/walkthrough-record/) outside the test card. At a stage boundary, complete its checkpoint before advancing. Resume a later session from verified state, not a plan written before execution.
 
 For example, an inactive `bluetooth.service` is not a failed reduction needing repair. Read its printed enablement state and workload requirements. If the unit is absent or needed, skip the example; if already inactive, do not start it merely to run a stop trial. Do not disable it persistently without the stage's prerequisites and recorded original state. Report the observation and choose the next applicable review.
 
@@ -137,7 +157,7 @@ Before an unattended run, agree on allowed changes, acceptable fixture substitut
 
 ## Leave a resumable record
 
-Use the existing walkthrough record for measurements and results. Add a compact handoff like this when an agent pauses or another agent takes over. This is a notes template, not shell input; do not include credentials or private keys.
+Use the existing [walkthrough record](/kixetpi/reference/walkthrough-record/) for measurements and results. Add a compact handoff like this when an agent pauses or another agent takes over. This is a notes template, not shell input; do not include credentials or private keys.
 
 ```text title="Agent handoff"
 Guide revision/date and exact section link:

@@ -9,6 +9,13 @@ Start with the official Raspberry Pi OS Lite image. Lite has no desktop environm
 This is a proposed procedure for a separate test Pi. We have not tested the full procedure on hardware yet. Commands below run on the Pi unless their title explicitly names the administration computer. Do not apply them to the computer hosting this documentation site.
 :::
 
+## At a glance
+
+- **Goal:** A booted, updated Raspberry Pi OS Lite installation with key-based SSH, a recorded baseline, and a known-good spare card.
+- **Runs on:** Administration computer (imaging, SSH key), then the Pi over SSH and at its local console.
+- **You need:** The hardware listed in [Before you start](/kixetpi/#before-you-start). No earlier stage.
+- **Ends with:** The [checkpoint](#checkpoint-and-troubleshooting): reboot-tested SSH and sudo, clean APT updates, a baseline, and a recovery card.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -20,14 +27,14 @@ This is a proposed procedure for a separate test Pi. We have not tested the full
 
 ## 1. Choose the hardware and image
 
-The initial target is Raspberry Pi OS Lite based on Debian 13, Trixie. The official documentation identifies Bookworm as the previous release. Check what Raspberry Pi Imager actually offers when you run the guide; do not replace release names in APT files to make an older installation match.
+The initial target is Raspberry Pi OS Lite based on Debian 13, Trixie. The newest Lite image when this page was reviewed was released on 6 October 2026. The official documentation identifies Bookworm as the previous release; Imager still lists it as **Raspberry Pi OS (Legacy)**. Do not choose a Legacy image for this guide. Check what Raspberry Pi Imager actually offers when you run the guide; do not replace release names in APT files to make an older installation match.
 
 A Pi 4 with at least 2 GB of RAM and the 64-bit Lite image is the proposed first test target, not an upstream minimum requirement. Earlier or smaller boards are still relevant, but need their own results. Use a reliable power supply, adequate cooling, and a healthy card. Resource tuning will not fix undervoltage or failing storage.
 
 | Hardware or installation | Route through this guide |
 | --- | --- |
 | Pi 1 or original Pi Zero / Zero W | Use the compatible 32-bit Lite image offered by Imager. Test stages 1 to 3. Skip this guide's Nix path. |
-| Pi 2 | Select the exact model in Imager and use its compatible image. Revisions differ; do not infer OS support from the family name alone. |
+| Pi 2 | Select the exact model in Imager. Imager currently offers only 32-bit images for this model, so follow the 32-bit path and skip Nix. |
 | Pi Zero 2 W or another small-memory 64-bit-capable Pi | Select a compatible image. A 64-bit CPU does not remove the RAM and storage costs of Nix. Begin with the APT-only path. |
 | Compatible Pi with a 64-bit Lite installation | Test stages 1 to 3 first. Stage 4 is optional and requires a 64-bit userspace as well as a suitable kernel. |
 | 32-bit userspace on a 64-bit kernel | Treat it as the 32-bit path. `uname -m` alone does not establish Nix compatibility. |
@@ -87,12 +94,13 @@ SSH stands for Secure Shell and provides a remote terminal. The `.pub` file is t
 1. Select the actual Pi model, then the compatible Raspberry Pi OS Lite edition. Do not select the desktop, DietPi, or Kicksecure image.
 2. Select the intended removable storage. Imaging erases it. Confirm the device and capacity before writing.
 3. Set a unique hostname and create your own username. This guide does not assume a default `pi` user or password.
-4. Set a strong local account password for console and sudo recovery. Configure the locale, time zone, and correct wireless country if using Wi-Fi.
-5. For a headless Pi, enable SSH and select public-key authentication. Provide only your public key. Keep the private key on the administration computer.
-6. Configure Wi-Fi if needed, or use Ethernet for the first boot. Check your model's supported Wi-Fi bands.
-7. Write the image, allow verification to complete, and eject the card safely.
+4. Set a strong local account password for console and sudo recovery. Leave **Enable passwordless sudo** unchecked; stage 3 relies on sudo asking for this password. If you supply only an SSH key without a password, Imager locks the account password and you lose password-based console recovery.
+5. In the localisation step, choose the capital city nearest to you. Imager uses it to set the time zone, keyboard layout, and Wi-Fi regulatory domain, so pick one in the country where the Pi operates.
+6. For a headless Pi, enable SSH and select public-key authentication. Imager pre-fills only `~/.ssh/id_rsa.pub`; browse to or paste `~/.ssh/kixetpi_ed25519.pub` (or your existing public key) instead. Provide only the public key. Keep the private key on the administration computer.
+7. Configure Wi-Fi if needed, or use Ethernet for the first boot. Check your model's supported Wi-Fi bands.
+8. Write the image, allow verification to complete, and eject the card safely.
 
-Use Imager's current customization interface rather than older tutorials that copy `wpa_supplicant.conf` into the boot partition. Image releases differ in how they configure networking and first-boot users.
+Use Imager's current customization interface rather than older tutorials that copy `wpa_supplicant.conf` into the boot partition. Current Trixie images apply these settings at first boot with cloud-init, from the `user-data`, `network-config`, and `meta-data` files Imager writes to the boot partition. Legacy Bookworm images use a different first-run script, so instructions for one do not apply to the other.
 
 ## 4. Boot and prove access
 
@@ -133,7 +141,7 @@ timedatectl status
 sudo -v
 ```
 
-Correct a wrong clock, missing network route, or failed sudo access before continuing. Keep time synchronization enabled because package verification, TLS, and useful logs depend on a sensible clock. If SSH fails, use the console to check the username, address, and `systemctl status ssh`; do not weaken authentication to guess at a fix.
+If your hostname, user, key, or Wi-Fi settings did not apply, run `cloud-init status --long` at the console and compare it with `/boot/firmware/user-data`; do not hand-edit the first-boot files on a running system. Correct a wrong clock, missing network route, or failed sudo access before continuing. Keep time synchronization enabled because package verification, TLS, and useful logs depend on a sensible clock. If SSH fails, use the console to check the username, address, and `systemctl status ssh`; do not weaken authentication to guess at a fix.
 
 **Reference:** the installed manuals `man whoami`, `man hostnamectl`, `man ip`, `man timedatectl`, and `man sudo` document these checks. The `sudo -v` command validates administrator access.
 
@@ -157,7 +165,7 @@ Userspace means programs and libraries outside the kernel. Its architecture can 
 
 If the release is not Trixie, stop and reconcile version-specific instructions before making changes.
 
-**Reference:** [Raspberry Pi OS editions and architecture](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/rpi-os-introduction.adoc), [model identification](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#model-and-revision-codes), and the installed manuals `man os-release`, `man cat`, `man uname`, `man dpkg`, `man getconf`, and `man apt-cache`.
+**Reference:** [Raspberry Pi OS editions and architecture](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/rpi-os-introduction.adoc), [model identification](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#check-raspberry-pi-model-and-cpu-across-distributions), and the installed manuals `man os-release`, `man cat`, `man uname`, `man dpkg`, `man getconf`, and `man apt-cache`.
 
 Review the image's files in `/etc/apt/sources.list.d/` and any `/etc/apt/sources.list`. Current Raspberry Pi documentation describes `debian.sources` for 64-bit or `raspbian.sources` for 32-bit, plus `raspi.sources`. Older images may use `.list` files. Record what is present; do not rename files or rewrite origins to match an example.
 
@@ -196,13 +204,13 @@ Wait for successful completion. Save other work before rebooting, which disconne
 sudo reboot
 ```
 
-Reconnect, confirm `uname -r`, and check `systemctl --failed`. Raspberry Pi's APT updates include its kernel and stable firmware. Do not use `rpi-update` as a routine updater. For a major OS release change, prefer a fresh image and restore your data rather than editing release names in repository files.
+Reconnect, confirm `uname -r`, and check `systemctl --failed`. Raspberry Pi's APT updates include its kernel and stable firmware. Do not use `rpi-update` as a routine updater. For a major OS release change, [Raspberry Pi recommends a clean install](https://www.raspberrypi.com/documentation/computers/os.html#upgrade): use a fresh image and restore your data rather than editing release names in repository files.
 
 **Reference:** [Raspberry Pi update procedure](https://www.raspberrypi.com/documentation/computers/os.html#update-software) and [command-line shutdown and reboot](https://www.raspberrypi.com/documentation/computers/getting-started.html#cmd-shutdown).
 
 ## 6. Record an unchanged baseline
 
-Before any DietPi-inspired changes, collect the following output and keep a copy with your [walkthrough record](/kixetpi/#record-the-first-hardware-walkthrough) outside the card:
+Before any DietPi-inspired changes, collect the following output and keep a copy with your [walkthrough record](/kixetpi/reference/walkthrough-record/) outside the card:
 
 ### Resources and boot
 
@@ -231,7 +239,7 @@ apt-mark showmanual
 dpkg-query -W -f='${binary:Package}\t${Version}\n'
 ```
 
-Some warnings are normal for unused hardware. Record explanations instead of requiring an empty journal. In the port list, identify every listening service and whether it binds to loopback or a network interface. Loopback allows connections only from the Pi itself.
+The stock journal is kept in RAM, so `journalctl` shows only the current boot; [stage 2](/kixetpi/guides/dietpi/#4-decide-whether-logs-survive-a-reboot) covers keeping logs across reboots. Lite includes some services you may not expect, such as Avahi for `.local` names, Bluetooth support, and `rpi-connect-lite` for Raspberry Pi Connect. Record them as found; stage 2 decides whether your workload needs them. Some warnings are normal for unused hardware. Record explanations instead of requiring an empty journal. In the port list, identify every listening service and whether it binds to loopback or a network interface. Loopback allows connections only from the Pi itself.
 
 **Reference:** the installed manuals `man systemctl`, `man ss`, `man journalctl`, `man apt-mark`, and [`dpkg-query` output formats](https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html). These are inspection commands, not cleanup commands.
 
@@ -253,6 +261,7 @@ Before the next stage, confirm all of the following:
 | No boot or repeated resets. | Power supply, card integrity, model/image compatibility, and console messages. Do not start removing services. |
 | `.local` cannot be resolved. | Use the router's recorded IP address, then investigate multicast DNS support. |
 | SSH refuses the key. | Username, selected public key, private key path, and `sudo journalctl -u ssh -b` from the console. |
+| Hostname, user, or Wi-Fi settings from Imager are missing. | `cloud-init status --long` at the console and the image type (Trixie, not Legacy). Re-image rather than editing first-boot files by hand. |
 | Package downloads fail. | Clock, route, DNS, free space, and the original image's repository configuration. |
 | Unexpected release or architecture. | Re-image with the intended compatible Lite image. Do not convert the running userspace in place. |
 | An upgrade no longer boots. | Boot the known-good card and preserve logs or data from the failed card before re-imaging. |
@@ -261,11 +270,13 @@ Preserve the verified baseline card or a restore-tested full-card image after th
 
 ## Sources and review status
 
-Content and primary installation/update sources reviewed on 28 September 2026. Upstream documents the individual operations; the combined KixetPi walkthrough remains untested. Installed manual pages describe the diagnostic commands for your actual package versions; Debian's [manual index](https://manpages.debian.org/trixie/index.html) is an online alternative.
+Content and primary installation/update sources reviewed on 22 November 2026, against the 6 October 2026 Lite image, Raspberry Pi Imager 2.0.12, and the Raspberry Pi documentation source as of 18 November 2026 (previously reviewed on 28 September 2026). The published raspberrypi.com pages refuse some automated clients; their AsciiDoc sources were checked instead. Upstream documents the individual operations; the combined KixetPi walkthrough remains untested. Installed manual pages describe the diagnostic commands for your actual package versions; Debian's [manual index](https://manpages.debian.org/trixie/index.html) is an online alternative.
 
 - [Official Raspberry Pi OS images](https://www.raspberrypi.com/software/operating-systems/).
 - [Raspberry Pi installation and first boot](https://www.raspberrypi.com/documentation/computers/getting-started.html).
 - [Raspberry Pi OS documentation and updates](https://www.raspberrypi.com/documentation/computers/os.html).
 - [Raspberry Pi SSH and public-key access](https://www.raspberrypi.com/documentation/computers/remote-access.html#ssh).
 - [Upstream Imager instructions](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/getting-started/install.adoc) and [SSH instructions](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/remote-access/ssh.adoc) are readable alternatives if the documentation site is unavailable.
+- [Raspberry Pi model identification](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#check-raspberry-pi-model-and-cpu-across-distributions) and [upgrade guidance](https://www.raspberrypi.com/documentation/computers/os.html#upgrade).
+- [Lite image release notes](https://downloads.raspberrypi.com/raspios_lite_arm64/release_notes.txt) and the [Imager source](https://github.com/raspberrypi/rpi-imager) for its customization options.
 - [Upstream OS introduction source](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/rpi-os-introduction.adoc), [package source definitions](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/software-sources.adoc), and [update instructions](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/updating.adoc).

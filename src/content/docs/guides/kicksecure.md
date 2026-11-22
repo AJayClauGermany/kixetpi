@@ -9,6 +9,13 @@ Keep the Raspberry Pi OS base from [stage 1](/kixetpi/guides/raspberry-pi-os/) a
 Use a test Pi with a known-good card backup and working local console access. SSH and firewall changes can lock you out. Keep your first SSH session open, but do not treat it as a substitute for a console. No hardening or recovery procedure here has passed a hardware test.
 :::
 
+## At a glance
+
+- **Goal:** Key-only SSH, an optional sudo password, an optional inbound firewall, a recorded view of AppArmor, and a regular update routine.
+- **Runs on:** The test Pi over SSH and at its **local console**, plus the administration computer for fresh login tests.
+- **You need:** Stage 2's [checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), a known-good backup, working console access, and your account password.
+- **Ends with:** The [checkpoint](#checkpoint): reboot-tested access and workload, with applied and skipped controls recorded. Stopping here is a complete path.
+
 ## What changes and how to recover
 
 | Action | Recovery limit |
@@ -26,7 +33,7 @@ Kicksecure's [Raspberry Pi](https://www.kicksecure.com/wiki/Raspberry_Pi) and [A
 
 Do not add Kicksecure repositories or install its metapackages, `security-misc`, replacement kernels, or boot-management packages on this base. Do not copy GRUB commands, x86-specific settings, or large sysctl lists. Those changes can conflict with Pi boot, networking, devices, or package management.
 
-The practices we use here are granting only needed privileges, exposing fewer services, keeping software updated, and restricting what applications can access where possible. The procedures below use Raspberry Pi OS and Debian tools. Kicksecure does not support this adaptation as a Kicksecure installation.
+The practices we use here are granting only needed privileges, exposing fewer services, keeping software updated, and restricting what applications can access where possible. The procedures below use Raspberry Pi OS and Debian tools. Kicksecure does not support this adaptation as a Kicksecure installation. For the reasoning, and for what hardening here cannot achieve, see [Why adapt instead of convert](/kixetpi/explanation/adapt-not-convert/) and [Security, performance, and recovery limits](/kixetpi/explanation/limits/#what-hardening-does-not-do).
 
 ## 1. Check updates and administrative privileges
 
@@ -48,7 +55,19 @@ Keep the image's Raspberry Pi and Debian or Raspbian package sources. Follow [st
 
 Review whether `sudo -l` grants `NOPASSWD: ALL`. If it does, code running as that user can normally obtain root without knowing a password. Even password-protected sudo is not a sandbox for malicious code in your own account.
 
+Raspberry Pi OS images released since April 2026 require a sudo password by default, unless **Enable passwordless sudo** was checked in Imager. Installations created from older images keep passwordless sudo after updates. Grants usually come from one of these files, which you can list without changing anything:
+
+```sh title="Pi: list sudo policy drop-ins"
+sudo ls -l /etc/sudoers.d/
+```
+
+Look for `010_YOUR_USER-nopasswd`, `010_pi-nopasswd`, or `90-cloud-init-users`. Some older Imager versions also produced the cloud-init file with a passwordless rule.
+
+**Reference:** [Raspberry Pi sudo password setting](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/configuration/users.adoc) and [Lite release notes](https://downloads.raspberrypi.com/raspios_lite_arm64/release_notes.txt) (2026-04-13: "Passwordless sudo now disabled by default").
+
 ### Optional: require a sudo password
+
+Skip this section if `sudo -l` already shows no `NOPASSWD` rule. Raspberry Pi's supported switch for this setting is `sudo raspi-config` → **System Options** → **S10 Admin Password**, which deletes the three files named above outright. Record their contents first so that you can restore them. The manual procedure below changes only the rule you identify and keeps a recovery shell open; use one approach, not both.
 
 First confirm that you know your account's local password and can use it to log in at the console. Open a root shell in the original session and **keep it open** until you have verified sudo in a separate normal-user session. A normal login cannot give you root access if the sudo policy is broken.
 
@@ -95,7 +114,7 @@ The `-S none` option disables connection sharing. Without it, an existing SSH ma
 
 **Reference:** [Raspberry Pi SSH key setup](https://www.raspberrypi.com/documentation/computers/remote-access.html#configure-ssh-without-a-password) and [Debian ssh(1)](https://manpages.debian.org/trixie/openssh-client/ssh.1.en.html).
 
-Inspect `/etc/ssh/sshd_config` and `/etc/ssh/sshd_config.d/`. Debian normally includes the drop-ins near the start of the main configuration. OpenSSH generally uses the first obtained value for a setting, so a later file does not necessarily override an earlier one. Existing `Match` blocks can change settings for individual connections.
+Inspect `/etc/ssh/sshd_config` and `/etc/ssh/sshd_config.d/`. Debian's default configuration includes the drop-ins at the start of the main file, so their settings override `/etc/ssh/sshd_config`. OpenSSH uses the first obtained value for a setting, and drop-ins are read in lexical order, so a file sorting before `00-kixetpi.conf` or an edited main file can still win. Existing `Match` blocks can change settings for individual connections.
 
 Create the following file only if its name is unused, the standard drop-in include is present, and no earlier or conditional rules conflict. Otherwise stop and reconcile the configuration first.
 
@@ -178,7 +197,7 @@ sudo ss -lntup
 systemctl is-active nftables firewalld ufw
 ```
 
-If `nft` is installed, also run `sudo nft list ruleset`. If legacy iptables tools are in use, inspect their saved rules too. An inactive service does not prove that no firewall rules exist. Do not proceed if you find a configured firewall, containers, a VPN, or rules you cannot explain. Do not flush or reset them to make the example fit.
+If `nft` is installed, also run `sudo nft list ruleset`. On Trixie, UFW and the `iptables` commands use the nftables backend, so this one listing also shows their rules. If legacy iptables tools are in use, inspect their saved rules too. An inactive service does not prove that no firewall rules exist. Do not proceed if you find a configured firewall, containers, a VPN, or rules you cannot explain. Do not flush or reset them to make the example fit.
 
 **Reference:** Installed `man ss`, `man systemctl`, `man nft`, and `man iptables-save` describe these checks.
 
@@ -247,7 +266,9 @@ Inspect the Pi. The file may be absent if the kernel security filesystem is unav
 cat /sys/kernel/security/lsm
 ```
 
-**Reference:** [Linux kernel LSM configuration and AppArmor enablement](https://www.kernel.org/doc/html/latest/admin-guide/LSM/apparmor.html).
+This prints a comma-separated list of active Linux security modules (LSMs). Raspberry Pi's 64-bit kernel configurations build AppArmor in but set an empty default LSM list, so `apparmor` may well be missing unless the kernel command line enables it. That inference comes from the kernel sources, not a hardware test; record what your Pi actually reports.
+
+**Reference:** [Linux security module list](https://docs.kernel.org/admin-guide/LSM/index.html), [AppArmor enablement](https://www.kernel.org/doc/html/latest/admin-guide/LSM/apparmor.html), and Raspberry Pi's [BCM2711](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/arch/arm64/configs/bcm2711_defconfig) and [BCM2712](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/arch/arm64/configs/bcm2712_defconfig) kernel configurations.
 
 If AppArmor's tools are installed, also run:
 
@@ -278,7 +299,7 @@ Read the unit, especially its user, writable paths, and privilege requirements. 
 
 **Reference:** [Debian systemctl(1) unit inspection](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) and [systemd-analyze(1) security exposure estimate](https://manpages.debian.org/trixie/systemd/systemd-analyze.1.en.html).
 
-Continue only if the application does not need privilege-gaining executables or temporary files shared with other services. Create a dedicated drop-in **only if this filename is unused**.
+Continue only if the application does not need privilege-gaining executables, temporary files shared with other services, or data it expects to keep in `/tmp` or `/var/tmp` across restarts. Create a dedicated drop-in **only if this filename is unused**.
 
 If the service fails to restart after this change, remove only `60-kixetpi-hardening.conf`. Run `sudo systemctl daemon-reload`, then restart the service. Do not use `systemctl revert`, which also removes unrelated overrides.
 
@@ -293,7 +314,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ```
 
-`NoNewPrivileges` prevents the service and its descendants from gaining privileges through mechanisms such as setuid execution. `PrivateTmp` gives the service private temporary directories. Neither prevents all filesystem or network access.
+`NoNewPrivileges` prevents the service and its descendants from gaining privileges through mechanisms such as setuid execution. It does not affect jobs the application starts through `at`, `cron`, or `systemd-run`. `PrivateTmp` gives the service private `/tmp` and `/var/tmp` directories, and **deletes their contents whenever the service stops**. Move any data the application keeps in those directories before trying it. Neither setting prevents all filesystem or network access.
 
 **Reference:** [Debian systemd.exec(5) `NoNewPrivileges` and `PrivateTmp`](https://manpages.debian.org/trixie/systemd/systemd.exec.5.en.html) and [systemctl(1) drop-in/revert behavior](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html).
 
@@ -346,7 +367,7 @@ You can stop here and keep an APT-only system. If the hardware has enough resour
 
 ## Sources and review status
 
-Reviewed on 28 September 2026. No claim here establishes Kicksecure equivalence or tested Pi support. If a local manual is missing, use the [Debian manual index](https://manpages.debian.org/trixie/index.html).
+Reviewed on 22 November 2026 (previously 28 September 2026), including Raspberry Pi's April 2026 change to password-required sudo. No claim here establishes Kicksecure equivalence or tested Pi support. If a local manual is missing, use the [Debian manual index](https://manpages.debian.org/trixie/index.html).
 
 - [Kicksecure on Raspberry Pi](https://www.kicksecure.com/wiki/Raspberry_Pi), [ARM64 status](https://www.kicksecure.com/wiki/ARM64), and [Debian conversion](https://www.kicksecure.com/wiki/Debian).
 - [Kicksecure security-misc](https://www.kicksecure.com/wiki/Security-misc) and [bootloader-related packages](https://www.kicksecure.com/wiki/Dev/boot#Bootloader-related_Kicksecure_and_Whonix_packages).
