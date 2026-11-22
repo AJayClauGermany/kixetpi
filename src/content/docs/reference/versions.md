@@ -11,15 +11,15 @@ These are the upstream versions the guides were written against. They move over 
 | --- | --- | --- | --- | --- |
 | Raspberry Pi OS base | Stages 1–3 | Debian 13 Trixie (64-bit `arm64` path) | 22 November 2026 | Raspberry Pi Imager's OS list, or the [OS introduction source](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/rpi-os-introduction.adoc). |
 | Debian manual pages | All stages | `manpages.debian.org/trixie/...` | 22 November 2026 | Prefer the Pi's installed `man` pages; the online suite must match the Pi's release. |
-| Nix installer | Stage 4 | 2.35.2 (`aarch64-linux` tarball and `.sha256`) | 22 November 2026 | [Release listing](https://releases.nixos.org/?prefix=nix/) and the version that [nixos.org/nix/install](https://nixos.org/nix/install) redirects to. |
-| Nixpkgs and Home Manager | Stage 4 | `nixos-26.05` with `release-26.05`; `home.stateVersion = "26.05"` | 22 November 2026 | `git ls-remote https://github.com/NixOS/nixpkgs 'refs/heads/nixos-*'` and the same for `nix-community/home-manager` `release-*`. Update both together. |
+| Nix installer | Stage 4 | 2.35.6 (`aarch64-linux` tarball and [`.sha256`](https://releases.nixos.org/nix/nix-2.35.6/nix-2.35.6-aarch64-linux.tar.xz.sha256)); 2.35.2 and earlier lack the 2.35.3 security fixes | 22 November 2026 | [Release listing](https://releases.nixos.org/?prefix=nix/) and the version that [nixos.org/nix/install](https://nixos.org/nix/install) redirects to. |
+| Nixpkgs and Home Manager | Stage 4 | `nixos-26.05` with `release-26.05`; `home.stateVersion = "26.05"`. NixOS 26.05 support ends 31 December 2026; 26.11 branches did not exist yet. | 22 November 2026 | `git ls-remote https://github.com/NixOS/nixpkgs 'refs/heads/nixos-*'` and the same for `nix-community/home-manager` `release-*`. Update both together. |
 | Lima | VM test run | 2.2.0 (the probe refuses other versions) | 22 November 2026 | `git ls-remote --tags https://github.com/lima-vm/lima`. Review the profile before accepting a newer release. |
 | Debian cloud image | VM test run | `debian-13-genericcloud-arm64-20260712-2537` | 22 November 2026 | [Trixie cloud image index](https://cloud.debian.org/images/cloud/trixie/) and its `SHA512SUMS`. |
 
 ## Notes from the latest review
 
 - All external links in the site resolved on 22 November 2026. `www.raspberrypi.com` and `github.com` refuse some automated clients; their content was checked through the Raspberry Pi documentation's AsciiDoc sources and `raw.githubusercontent.com`.
-- `nixos.org/manual/nix/stable/` redirects to the Nix 2.34 manual, `nix.dev/manual/nix/latest/` to 2.36, and the live installer to 2.36.0. Read the manual that matches the installer version you choose.
+- `nixos.org/manual/nix/stable/` redirects to the Nix 2.34 manual, `nix.dev/manual/nix/latest/` to 2.36, and the live installer to 2.36.0. Stage 4 now links the versioned [2.35 manual](https://nix.dev/manual/nix/2.35/) to match its pin. Read the manual that matches the installer version you choose.
 - Lima 2.3.0 and Debian cloud images newer than the pinned one were available. The recorded VM trial used the pinned versions; a re-run on newer versions is a new trial.
 
 ## Re-checking sources
