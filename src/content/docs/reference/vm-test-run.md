@@ -493,7 +493,7 @@ After reviewing the complete simulation, exercise `sudo apt-get remove hello` an
 
 ### Persistent journal
 
-Apply the exact drop-in and recovery from [stage 2's journal section](/kixetpi/guides/dietpi/#4-bound-logs-without-discarding-them-at-reboot), preserving logs and checking that its filename is unused. Test the commands, not just the configuration text:
+Apply the exact drop-in and recovery from [stage 2's journal section](/kixetpi/guides/dietpi/#4-decide-whether-logs-survive-a-reboot), preserving logs and checking that its filename is unused. Test the commands, not just the configuration text:
 
 ```sh title="VM guest: inspect the applied logging configuration"
 systemd-analyze cat-config systemd/journald.conf

@@ -24,7 +24,7 @@ Even Raspberry Pi OS is not one archive. The 64-bit edition uses Debian's `arm64
 | Source | Practice borrowed | Not borrowed | Stage |
 | --- | --- | --- | --- |
 | Raspberry Pi OS Lite | The whole base: kernel, firmware, boot files, networking, APT repositories, and update path. | Desktop image or third-party images. | [1](/kixetpi/guides/raspberry-pi-os/) |
-| DietPi | Choose software for the machine's purpose, control optional services, and limit log storage. | `dietpi-installer`, `dietpi-*` tools, DietPi repositories, RAM-only logging, and swap scripts. | [2](/kixetpi/guides/dietpi/) |
+| DietPi | Choose software for the machine's purpose, control optional services, and make a deliberate choice about log storage and writes. | `dietpi-installer`, `dietpi-*` tools, DietPi repositories, DietPi-RAMlog, and swap scripts. | [2](/kixetpi/guides/dietpi/) |
 | Kicksecure | Grant only needed privileges, expose fewer services, keep updates current, and confine applications where the kernel supports it. | Kicksecure repositories and metapackages, `security-misc`, replacement kernels, boot-stack changes, and large `sysctl` lists. | [3](/kixetpi/guides/kicksecure/) |
 | Nix and Home Manager (optional) | Declare user tools in a file, pin their inputs, and roll back user environments. | NixOS modules, `nixos-rebuild`, and Nix-managed system services or login shells. | [4](/kixetpi/guides/nix/) |
 
