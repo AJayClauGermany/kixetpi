@@ -27,6 +27,8 @@ Use a test Pi with a known-good card backup and working local console access. SS
 
 Stop after any failed check instead of making further changes. A drop-in is a small configuration file added beside the main configuration. You can remove it without changing the main file.
 
+If you set up optional [local save points](/kixetpi/guides/save-points/), the marked steps below name a save point to create first. Restoring it returns system files to that moment without re-flashing. It lives on the same card, so it does not replace the backup. A restore also needs working access, so keep the recovery sessions each step asks for.
+
 ## This is not a Kicksecure conversion
 
 Kicksecure's [Raspberry Pi](https://www.kicksecure.com/wiki/Raspberry_Pi) and [ARM64](https://www.kicksecure.com/wiki/ARM64) pages describe source builds and distro morphing as testers-only, without a downloadable image. Its [Debian conversion instructions](https://www.kicksecure.com/wiki/Debian) target Debian Trixie. Matching the Debian release does not establish Raspberry Pi OS compatibility.
@@ -66,6 +68,16 @@ Look for `010_YOUR_USER-nopasswd`, `010_pi-nopasswd`, or `90-cloud-init-users`. 
 ### Optional: require a sudo password
 
 Skip this section if `sudo -l` already shows no `NOPASSWD` rule.
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-sudo-password
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 First confirm that you know your account's local password and can use it to log in at the console. Then open a root shell in the original session and **keep it open** until you have verified sudo in a separate normal-user session. If the sudo policy breaks, a normal login cannot give you root access to repair it; this shell can.
 
@@ -135,6 +147,16 @@ sudo ls -l /etc/ssh/sshd_config.d/
 sudo grep -n '^Include' /etc/ssh/sshd_config
 sudo grep -rn '^[[:space:]]*Match' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/
 ```
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-ssh-policy
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 Create the file below only if `00-kixetpi.conf` is not listed yet, the `Include /etc/ssh/sshd_config.d/*.conf` line appears before any other setting in the main file, and the last command prints no `Match` lines (it then returns a nonzero status, which is expected). Otherwise stop and reconcile the configuration first.
 
@@ -218,6 +240,16 @@ systemctl is-active nftables firewalld ufw
 ```
 
 If `nft` is installed, also run `sudo nft list ruleset`. On Trixie, UFW and the `iptables` commands use nftables underneath, so this one listing also shows their rules. If the `iptables` package is installed, also run `sudo iptables-legacy-save` and `sudo ip6tables-legacy-save`; any line starting with `-A` is a rule from the older iptables system. An inactive service does not prove that no firewall rules exist. Do not proceed if you find a configured firewall, containers, a VPN, or rules you cannot explain. Do not flush or reset them to make the example fit.
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-firewall
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 With a working local console and a confirmed fresh configuration:
 
@@ -349,7 +381,7 @@ Test the application, including its writes, network requests, and restart behavi
 
 ## 6. Keep an update routine
 
-APT update timers and unattended security updates are not the same thing. This draft requires a deliberate update routine, such as a weekly review and prompt action on relevant security advisories. Use the base guide's update and reboot checks. Do not regard a completed initial install as permanently hardened.
+APT update timers and unattended security updates are not the same thing. This draft requires a deliberate update routine, such as a weekly review and prompt action on relevant security advisories. Use the base guide's update and reboot checks. If you set up [local save points](/kixetpi/guides/save-points/), create one before applying a large update. Do not regard a completed initial install as permanently hardened.
 
 If you already use `unattended-upgrades`, inspect its configuration and run `sudo unattended-upgrade --dry-run --debug`. Confirm which actual repository origins it allows. A Debian-only example may omit Raspberry Pi or Raspbian packages. Do not claim automatic coverage until its output shows the required origins and you have tested the process on this image.
 

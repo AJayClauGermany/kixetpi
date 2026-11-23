@@ -246,18 +246,23 @@ sudo apt update
 
 ## 5. Use save points during the stages
 
-Create one before any change that the stage tables call backup-dependent or that can cut off access, and name it after what comes next:
+The later stages mark each step where a save point helps, in a box titled **Optional save point**, and give the command with a ready-made name. You do not have to choose names yourself:
+
+| Stage | Before | Name used in the guide |
+| --- | --- | --- |
+| [2](/kixetpi/guides/dietpi/) | Disabling a service at startup | `before-service-disable` |
+| [2](/kixetpi/guides/dietpi/) | Removing a package | `before-package-removal` |
+| [2](/kixetpi/guides/dietpi/) | Keeping the journal on disk | `before-journal` |
+| [3](/kixetpi/guides/kicksecure/) | Requiring a sudo password | `before-sudo-password` |
+| [3](/kixetpi/guides/kicksecure/) | Changing SSH policy | `before-ssh-policy` |
+| [3](/kixetpi/guides/kicksecure/) | Installing and enabling the firewall | `before-firewall` |
+| [4](/kixetpi/guides/nix/) | Installing Nix | `before-nix` |
+
+If you repeat a step, the name is already taken and the script stops without changing anything. Add a number, such as `before-package-removal-2`. For any other change, such as a large update, pick your own name:
 
 ```sh title="Pi: create a save point before a change"
 sudo savepoint create SAVE_POINT_NAME
 ```
-
-| Before | Example name |
-| --- | --- |
-| Removing a package in [stage 2](/kixetpi/guides/dietpi/#3-review-package-removal-without-a-bulk-purge) | `before-remove-bluez` |
-| Changing SSH policy or enabling the firewall in [stage 3](/kixetpi/guides/kicksecure/) | `before-ufw` |
-| Applying a large update | `before-upgrade` |
-| Installing Nix in [stage 4](/kixetpi/guides/nix/#2-review-and-install-upstream-nix) | `before-nix` |
 
 Try the stage's own undo first; a restore is for when that fails or the cause is unclear. To go back:
 
