@@ -13,7 +13,7 @@ Use a test Pi with a known-good card backup and working local console access. SS
 
 - **Goal:** Key-only SSH, an optional sudo password, an optional inbound firewall, a recorded view of AppArmor, and a regular update routine.
 - **Runs on:** The test Pi over SSH and at its **local console**, plus the administration computer for fresh login tests.
-- **You need:** Stage 2's [checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), a known-good backup, working console access, and your account password.
+- **You need:** Stage 2's [checkpoint](/kixetpi/guides/dietpi/#checkpoint-and-recovery), a recent full-card backup, working console access, and your account password.
 - **Ends with:** The [checkpoint](#checkpoint): reboot-tested access and workload, with applied and skipped controls recorded. Stopping here is a complete path.
 
 ## What changes and how to recover
@@ -49,8 +49,6 @@ sudo ss -lntup
 sudo -l
 ```
 
-**Reference:** Installed `man os-release`, `man dpkg`, `man uname`, `man apt-cache`, `man systemctl`, `man ss`, and `man sudo` describe these diagnostic commands.
-
 Keep the image's Raspberry Pi and Debian or Raspbian package sources. Follow [stage 1's reviewed APT update and reboot steps](/kixetpi/guides/raspberry-pi-os/#5-confirm-the-release-and-update-normally), not `rpi-update`. Raspberry Pi recommends a fresh image for a major release change, not changing APT release names.
 
 Review whether `sudo -l` grants `NOPASSWD: ALL`. If it does, code running as that user can normally obtain root without knowing a password. Even password-protected sudo is not a sandbox for malicious code in your own account.
@@ -67,9 +65,9 @@ Look for `010_YOUR_USER-nopasswd`, `010_pi-nopasswd`, or `90-cloud-init-users`. 
 
 ### Optional: require a sudo password
 
-Skip this section if `sudo -l` already shows no `NOPASSWD` rule. Raspberry Pi's supported switch for this setting is `sudo raspi-config` → **System Options** → **S10 Admin Password**, which deletes the three files named above outright. Record their contents first so that you can restore them. The manual procedure below changes only the rule you identify and keeps a recovery shell open; use one approach, not both.
+Skip this section if `sudo -l` already shows no `NOPASSWD` rule.
 
-First confirm that you know your account's local password and can use it to log in at the console. Open a root shell in the original session and **keep it open** until you have verified sudo in a separate normal-user session. A normal login cannot give you root access if the sudo policy is broken.
+First confirm that you know your account's local password and can use it to log in at the console. Then open a root shell in the original session and **keep it open** until you have verified sudo in a separate normal-user session. If the sudo policy breaks, a normal login cannot give you root access to repair it; this shell can.
 
 ```sh title="Pi original session: retain recovery access"
 sudo -i
@@ -78,10 +76,21 @@ id -u
 
 Expect `0`, meaning this shell has root privileges. Keep it open for recovery until both checks below pass.
 
-1. Inspect `/etc/sudoers` and its included files. Record the original grant so you can restore it.
-2. From the retained root shell, use `visudo` or `visudo -f PATH` on the actual file granting passwordless access. Replace `PATH` with that file's path.
-3. Change only the relevant `NOPASSWD` grant to `PASSWD`; do not remove administrative access or overwrite the configuration. Never force an invalid save.
-4. Validate the whole policy:
+In the root shell, record the current policy so that you can restore it:
+
+```sh title="Pi retained root shell: record the current sudo policy"
+cat /etc/sudoers /etc/sudoers.d/*
+```
+
+Copy the output into your walkthrough record. A passwordless grant looks like `YOUR_USER ALL=(ALL) NOPASSWD: ALL`, sometimes written `NOPASSWD:ALL`. Then use **one** of these approaches, not both:
+
+- **Simpler: `raspi-config`.** In the root shell, run `raspi-config` and choose **System Options** → **S10 Admin Password**. This is Raspberry Pi's supported switch. It deletes the three files named above outright, which is why you recorded them first.
+- **Targeted: edit only the grant.** This leaves every other rule untouched:
+  1. Run `visudo -f PATH`, replacing `PATH` with the file that contains the `NOPASSWD` grant. Use plain `visudo` if the grant is in `/etc/sudoers` itself.
+  2. Change only `NOPASSWD` to `PASSWD` in that grant, for example to `YOUR_USER ALL=(ALL) PASSWD: ALL`. Do not remove administrative access or delete other lines.
+  3. Save and exit. If `visudo` reports an error and asks what to do, press `e` to edit again or `x` to exit without saving. Never press `Q`, which saves the invalid file anyway.
+
+With either approach, validate the whole policy:
 
 ```sh title="Pi retained root shell: check the whole sudo policy"
 visudo -c
@@ -96,7 +105,7 @@ sudo /usr/bin/id -u
 
 Confirm that sudo prompts for your password and the command prints `0`. If the command succeeds without a prompt, another rule may still allow passwordless access. Inspect the other matching rules. If authentication or access fails, restore the original grant with `visudo` in the retained root shell. Only then leave the root shell with `exit`.
 
-**Reference:** [Debian visudo(8)](https://manpages.debian.org/trixie/sudo/visudo.8.en.html), [sudoers(5) rule order and PASSWD tags](https://manpages.debian.org/trixie/sudo/sudoers.5.en.html), and installed `man sudo` for `-i` and `-k`.
+**Reference:** [Debian visudo(8)](https://manpages.debian.org/trixie/sudo/visudo.8.en.html), [sudoers(5) rule order and PASSWD tags](https://manpages.debian.org/trixie/sudo/sudoers.5.en.html),.
 
 For a network-facing application, use its package's dedicated service account rather than your administrator account. This page does not define a safe environment for arbitrary hostile software.
 
@@ -110,13 +119,24 @@ From a second terminal on your administration computer, replace the example user
 ssh -S none -i ~/.ssh/kixetpi_ed25519 -o PreferredAuthentications=publickey -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no YOUR_USER@YOUR_PI
 ```
 
-The `-S none` option disables connection sharing. Without it, an existing SSH master connection could bypass a fresh authentication test. Inside this new session, run `sudo -v`. Do not continue unless both login and administrative access work. A key passphrase prompt is local to the private key and is different from an SSH account-password prompt.
+The `-S none` option disables connection sharing. Without it, SSH could reuse a connection that is already open, and you would not be testing a fresh login. Inside this new session, run `sudo -v`. Do not continue unless both login and administrative access work. A key passphrase prompt is local to the private key and is different from an SSH account-password prompt.
 
 **Reference:** [Raspberry Pi SSH key setup](https://www.raspberrypi.com/documentation/computers/remote-access.html#configure-ssh-without-a-password) and [Debian ssh(1)](https://manpages.debian.org/trixie/openssh-client/ssh.1.en.html).
 
-Inspect `/etc/ssh/sshd_config` and `/etc/ssh/sshd_config.d/`. Debian's default configuration includes the drop-ins at the start of the main file, so their settings override `/etc/ssh/sshd_config`. OpenSSH uses the first obtained value for a setting, and drop-ins are read in lexical order, so a file sorting before `00-kixetpi.conf` or an edited main file can still win. Existing `Match` blocks can change settings for individual connections.
+Before adding a policy file, check how the Pi reads its SSH server configuration. Settings come from `/etc/ssh/sshd_config` and from drop-in files in `/etc/ssh/sshd_config.d/`. Two rules decide which value applies:
 
-Create the following file only if its name is unused, the standard drop-in include is present, and no earlier or conditional rules conflict. Otherwise stop and reconcile the configuration first.
+- For each setting, the **first** value OpenSSH reads wins. Debian's main file includes the drop-ins at its start, so drop-ins override the main file. Drop-ins are read in filename order, which is why this guide's file is named `00-kixetpi.conf`: it sorts before files such as `50-cloud-init.conf`. A file whose name sorts earlier, or a setting placed above the `Include` line in an edited main file, can still win.
+- `Match` blocks apply different settings to particular users or addresses.
+
+Check all three conditions:
+
+```sh title="Pi: check the SSH configuration layout"
+sudo ls -l /etc/ssh/sshd_config.d/
+sudo grep -n '^Include' /etc/ssh/sshd_config
+sudo grep -rn '^[[:space:]]*Match' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/
+```
+
+Create the file below only if `00-kixetpi.conf` is not listed yet, the `Include /etc/ssh/sshd_config.d/*.conf` line appears before any other setting in the main file, and the last command prints no `Match` lines (it then returns a nonzero status, which is expected). Otherwise stop and reconcile the configuration first.
 
 Keep the existing SSH session and local console available. Recovery removes **only this new file**, then validates before reloading; see [Recover SSH access](#recover-ssh-access). Keep your account password for sudo and local recovery; do not lock the account with `passwd -l`.
 
@@ -142,7 +162,7 @@ sudo /usr/sbin/sshd -t
 sudo /usr/sbin/sshd -T | grep -E '^(pubkeyauthentication|passwordauthentication|kbdinteractiveauthentication|permitrootlogin) '
 ```
 
-Expect `pubkeyauthentication yes` and `no` for the other three settings. If the configuration has `Match` rules, also inspect `sshd -T -C` with the real connection details. For example, replace all values in this command:
+Expect `pubkeyauthentication yes` and `no` for the other three settings. If the configuration has `Match` rules, also inspect `sshd -T -C` with the real connection details. Replace all values in this command. To find `ADMIN_IP`, run `echo $SSH_CLIENT` in your SSH session on the Pi; the first value is the administration computer's address. If you do not know a name for that computer, use the same address for `ADMIN_HOSTNAME`:
 
 ```sh title="Pi: inspect settings for your actual SSH connection"
 sudo /usr/sbin/sshd -T -C user=YOUR_USER,addr=ADMIN_IP,host=ADMIN_HOSTNAME
@@ -197,9 +217,7 @@ sudo ss -lntup
 systemctl is-active nftables firewalld ufw
 ```
 
-If `nft` is installed, also run `sudo nft list ruleset`. On Trixie, UFW and the `iptables` commands use the nftables backend, so this one listing also shows their rules. If legacy iptables tools are in use, inspect their saved rules too. An inactive service does not prove that no firewall rules exist. Do not proceed if you find a configured firewall, containers, a VPN, or rules you cannot explain. Do not flush or reset them to make the example fit.
-
-**Reference:** Installed `man ss`, `man systemctl`, `man nft`, and `man iptables-save` describe these checks.
+If `nft` is installed, also run `sudo nft list ruleset`. On Trixie, UFW and the `iptables` commands use nftables underneath, so this one listing also shows their rules. If the `iptables` package is installed, also run `sudo iptables-legacy-save` and `sudo ip6tables-legacy-save`; any line starting with `-A` is a rule from the older iptables system. An inactive service does not prove that no firewall rules exist. Do not proceed if you find a configured firewall, containers, a VPN, or rules you cannot explain. Do not flush or reset them to make the example fit.
 
 With a working local console and a confirmed fresh configuration:
 
@@ -226,7 +244,7 @@ sudo ufw --dry-run enable
 
 The SSH exception permits any source that can reach the Pi, on IPv4 and IPv6. It is not a LAN-only rule. Keep router port-forwarding disabled and check the router's IPv6 exposure policy. Restricting SSH to a known management address or subnet is a useful later change, but it needs a stable address and separate lockout testing.
 
-UFW includes rules for established traffic and selected network functions such as DHCP, ICMP, and discovery. "Deny incoming" does not mean every packet except SSH is rejected. Review `sudo ufw show raw` after activation for the complete rules; `ufw status` shows only part of the policy. Do not remove IPv6 neighbor-discovery or other default network rules blindly.
+UFW also allows replies to connections the Pi started, and selected network functions: DHCP (automatic address assignment), ICMP (ping and network error messages), and local service discovery. "Deny incoming" does not mean every packet except SSH is rejected. Review `sudo ufw show raw` after activation for the complete rules; `ufw status` shows only part of the policy. Do not remove IPv6 neighbor discovery (how IPv6 devices find each other on the local network) or other default network rules blindly.
 
 **Reference:** [Debian ufw(8) rules, dry-run, default exceptions, and reports](https://manpages.debian.org/trixie/ufw/ufw.8.en.html).
 
@@ -266,7 +284,7 @@ Inspect the Pi. The file may be absent if the kernel security filesystem is unav
 cat /sys/kernel/security/lsm
 ```
 
-This prints a comma-separated list of active Linux security modules (LSMs). Raspberry Pi's 64-bit kernel configurations build AppArmor in but set an empty default LSM list, so `apparmor` may well be missing unless the kernel command line enables it. That inference comes from the kernel sources, not a hardware test; record what your Pi actually reports.
+This prints a comma-separated list of active Linux security modules (LSMs), the kernel features that enforce access rules, such as AppArmor. Raspberry Pi's 64-bit kernel configurations build AppArmor in but do not turn it on by default, so `apparmor` may well be missing unless the kernel command line (the boot parameters in `/boot/firmware/cmdline.txt`) enables it. That inference comes from the kernel sources, not a hardware test; record what your Pi actually reports.
 
 **Reference:** [Linux security module list](https://docs.kernel.org/admin-guide/LSM/index.html), [AppArmor enablement](https://www.kernel.org/doc/html/latest/admin-guide/LSM/apparmor.html), and Raspberry Pi's [BCM2711](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/arch/arm64/configs/bcm2711_defconfig) and [BCM2712](https://github.com/raspberrypi/linux/blob/rpi-6.18.y/arch/arm64/configs/bcm2712_defconfig) kernel configurations.
 
@@ -295,7 +313,7 @@ systemctl cat YOUR_APP.service
 systemd-analyze security YOUR_APP.service
 ```
 
-Read the unit, especially its user, writable paths, and privilege requirements. The security score is a checklist, not an audit or proof of safety. A root-running service does not lose its existing privileges just because `NoNewPrivileges` is set.
+Read the unit, especially its user, writable paths, and privilege requirements. The security score is a checklist, not an audit or proof of safety.
 
 **Reference:** [Debian systemctl(1) unit inspection](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) and [systemd-analyze(1) security exposure estimate](https://manpages.debian.org/trixie/systemd/systemd-analyze.1.en.html).
 
@@ -314,7 +332,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ```
 
-`NoNewPrivileges` prevents the service and its descendants from gaining privileges through mechanisms such as setuid execution. It does not affect jobs the application starts through `at`, `cron`, or `systemd-run`. `PrivateTmp` gives the service private `/tmp` and `/var/tmp` directories, and **deletes their contents whenever the service stops**. Move any data the application keeps in those directories before trying it. Neither setting prevents all filesystem or network access.
+`NoNewPrivileges` prevents the service and the processes it starts from gaining privileges through mechanisms such as setuid programs (programs like `sudo` that run with their owner's privileges). A service already running as root keeps its existing privileges. The setting does not affect jobs the application starts through `at`, `cron`, or `systemd-run`. `PrivateTmp` gives the service private `/tmp` and `/var/tmp` directories, and **deletes their contents whenever the service stops**. Move any data the application keeps in those directories before trying it. Neither setting prevents all filesystem or network access.
 
 **Reference:** [Debian systemd.exec(5) `NoNewPrivileges` and `PrivateTmp`](https://manpages.debian.org/trixie/systemd/systemd.exec.5.en.html) and [systemctl(1) drop-in/revert behavior](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html).
 
@@ -325,7 +343,7 @@ systemctl status YOUR_APP.service --no-pager
 sudo journalctl -u YOUR_APP.service --since today --no-pager
 ```
 
-**Reference:** [Debian systemctl(1) daemon-reload and restart](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) and installed `man journalctl`.
+**Reference:** [Debian systemctl(1) daemon-reload and restart](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html).
 
 Test the application, including its writes, network requests, and restart behavior. If it fails, use the targeted recovery above. Keep more restrictive filesystem and network controls for an application-specific guide.
 
@@ -351,7 +369,7 @@ sudo journalctl -b -p warning --no-pager
 sudo apt update
 ```
 
-**Reference:** Installed `man systemctl`, `man ss`, and `man journalctl`; [Debian apt(8)](https://manpages.debian.org/trixie/apt/apt.8.en.html).
+**Reference:** [Debian apt(8)](https://manpages.debian.org/trixie/apt/apt.8.en.html).
 
 Only if you completed the UFW section:
 
@@ -361,7 +379,7 @@ sudo ufw status verbose
 
 **Reference:** [Debian ufw(8) status](https://manpages.debian.org/trixie/ufw/ufw.8.en.html).
 
-Explain why each remaining listening service is needed. Record which applications AppArmor confines and which it does not, including when AppArmor is unavailable. Back up this working state before adding more software.
+Explain why each remaining listening service is needed. Record which applications AppArmor confines and which it does not, including when AppArmor is unavailable. Make a new full-card backup of this working state before adding more software.
 
 You can stop here and keep an APT-only system. If the hardware has enough resources and you want declarative user packages, continue to the [optional Nix guide](/kixetpi/guides/nix/).
 

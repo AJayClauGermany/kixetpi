@@ -14,7 +14,7 @@ Complete the [base setup](/kixetpi/guides/raspberry-pi-os/) and its backup check
 - **Goal:** Keep only the services and packages your workload needs, and make a deliberate, bounded choice about whether logs survive a reboot.
 - **Runs on:** The test Pi over SSH, with the known-good card nearby.
 - **You need:** Stage 1's [checkpoint](/kixetpi/guides/raspberry-pi-os/#checkpoint-and-troubleshooting) and baseline, and a written list of what the Pi must do.
-- **Ends with:** The [checkpoint](#checkpoint-and-recovery): a rebooted, working workload; a record of every change; and a new known-good backup.
+- **Ends with:** The [checkpoint](#checkpoint-and-recovery): a rebooted, working workload; a record of every change; and a new full-card backup.
 
 ## What changes and how to recover
 
@@ -24,6 +24,8 @@ Complete the [base setup](/kixetpi/guides/raspberry-pi-os/) and its backup check
 | Remove a package | Reinstall if it remains available; configuration and data may need a backup. |
 | Keep a bounded journal on disk | Remove the new drop-in to return to the stock RAM-only journal. Logs already discarded are lost unless exported beforehand. |
 | Inspect resources and swap | No configuration changes; leave stock swap intact. |
+
+A *drop-in* is a small configuration file placed beside a program's main configuration file. Deleting it undoes the change without editing the main file.
 
 ## What transfers and what does not
 
@@ -62,7 +64,7 @@ apt-mark showmanual
 
 Use the `available` memory value rather than treating all filesystem cache as wasted RAM. Repeat measurements after a reboot, after the same idle interval, and during the same workload. A service that takes a long time to start does not necessarily use much memory while idle.
 
-**Reference:** the Pi's installed manuals `man free`, `man swapon`, `man df`, `man systemd-analyze`, `man systemctl`, `man ss`, `man journalctl`, and `man apt-mark`; also available in the [Debian manual index](https://manpages.debian.org/trixie/index.html).
+**Reference:** the Pi's installed manual pages (`man free`, `man systemctl`, and so on), also in the [Debian manual index](https://manpages.debian.org/trixie/index.html).
 
 Keep these parts unless a separate, tested replacement exists:
 
@@ -89,9 +91,17 @@ systemctl cat bluetooth.service
 systemctl list-dependencies --reverse bluetooth.service
 ```
 
-Record the printed enablement and activity states, not just exit codes. The `is-enabled` command can return success for `static` or `indirect` as well as `enabled`. The `is-active` command returns nonzero for inactive units.
+Write down the words these commands print, such as `enabled` and `active`, not just whether they succeeded. Watch for two details:
 
-Inspect associated sockets and timers. Reverse dependencies list only units currently loaded, not every application that might need Bluetooth.
+- `is-enabled` can succeed for `static` or `indirect` as well as `enabled`. The persistent change below applies only to a service that reported `enabled`.
+- `list-dependencies --reverse` shows only units currently loaded, not every application that might need Bluetooth.
+
+Also look for sockets or timers that could start the service. No output means none were found; `grep` then returns a nonzero status, which is expected:
+
+```sh title="Pi: look for related sockets and timers"
+systemctl list-sockets --all | grep -i bluetooth
+systemctl list-timers --all | grep -i bluetooth
+```
 
 If it is running and unused, stop it for this boot. Keep another recovery input or the known-good card available. To undo the trial, start the service again as shown below:
 
@@ -109,7 +119,7 @@ sudo systemctl start bluetooth.service
 
 ### Make the service change persistent
 
-Disable automatic startup only after a successful trial and only if the recorded state was `enabled`. Review the unit's `Also=` setting first. The `disable` command can also change whether the units listed there start automatically. Record their states for recovery too.
+Disable automatic startup only after a successful trial and only if the recorded state was `enabled`. Review the unit's `Also=` setting first; if present, it is in the `[Install]` section of the `systemctl cat` output. The `disable` command can also change whether the units listed there start automatically. Record their states for recovery too.
 
 Disable the reviewed service:
 
@@ -137,7 +147,7 @@ Do not disable Avahi casually. It may provide the `.local` hostname you use for 
 
 ## 3. Review package removal without a bulk purge
 
-APT can remove dependent packages too. Preserve the card backup and recorded installed versions before removal. Use `remove`, not `purge`, to retain package configuration files; neither operation backs up application data.
+APT can remove dependent packages too. Preserve a full-card backup and recorded installed versions before removal. Use `remove`, not `purge`, to retain package configuration files; neither operation backs up application data.
 
 Review candidates and the automatic-removal proposal without applying it:
 
@@ -205,7 +215,7 @@ Look for `Storage=volatile` in the output, typically from `/usr/lib/systemd/jour
 
 | Mode | Storage writes | After a crash or failed boot | Use it when |
 | --- | --- | --- | --- |
-| Stock volatile journal | None for the journal. | The previous boot's journal is gone. | The Pi is stable and SD-card wear matters more than post-mortem logs. |
+| Stock volatile journal | None for the journal. | The previous boot's journal is gone. | The Pi is stable and SD-card wear matters more than logs from before a crash. |
 | Bounded persistent journal (below) | Some, limited to the budget you set. | `journalctl -b -1` can show the previous boot. | You are testing changes, as in this guide, and need evidence across reboots. |
 
 Either choice is valid. For this walkthrough, the stage checkpoints compare logs across reboots, so this guide proposes the bounded persistent journal during testing. You can remove it again once the system is stable. Do not put `/var/log` on a separate RAM disk, routinely truncate logs, or disable the journal.
@@ -232,7 +242,7 @@ RuntimeMaxUse=16M
 
 `Storage=persistent` prefers disk storage under `/var/log/journal` and uses memory temporarily when disk storage is unavailable. `SystemMaxUse` limits persistent journal files, and `RuntimeMaxUse` limits journal files kept in RAM. Active files can keep usage above these limits. The settings do not limit other application logs.
 
-**Reference:** [journald.conf drop-ins, precedence, storage and size limits](https://manpages.debian.org/trixie/systemd/journald.conf.5.en.html) and [sudoedit](https://manpages.debian.org/trixie/sudo/sudo.8.en.html); see the Pi's installed `man mkdir` for directory creation.
+**Reference:** [journald.conf drop-ins, precedence, storage and size limits](https://manpages.debian.org/trixie/systemd/journald.conf.5.en.html) and [sudoedit](https://manpages.debian.org/trixie/sudo/sudo.8.en.html).
 
 Apply the change and inspect the result:
 
@@ -259,13 +269,13 @@ sudo rm /etc/systemd/journald.conf.d/60-kixetpi-limits.conf
 sudo systemctl restart systemd-journald
 ```
 
-**Reference:** [journald configuration precedence](https://manpages.debian.org/trixie/systemd/journald.conf.5.en.html) and [safe service restart](https://manpages.debian.org/trixie/systemd/systemd-journald.service.8.en.html); see the Pi's installed `man rm` for file removal.
+**Reference:** [journald configuration precedence](https://manpages.debian.org/trixie/systemd/journald.conf.5.en.html) and [safe service restart](https://manpages.debian.org/trixie/systemd/systemd-journald.service.8.en.html).
 
 Removing the drop-in does not delete journal files already written to `/var/log/journal`, and it cannot recover logs already rotated out. Remove those files only after exporting anything you need, and only if you no longer want them.
 
 ## 5. Keep the stock swap setup for now
 
-Inspect the actual image instead of assuming a particular swap manager. Current Trixie Lite images use Raspberry Pi's `rpi-swap` package, which replaces the older `dphys-swapfile`. Its automatic mode currently creates compressed swap in RAM (zram) and occasionally writes idle pages to a file at `/var/swap`. That file is attached to zram for writeback; it is not an ordinary swap file, so `swapon --show` normally lists only `/dev/zram0`.
+Inspect the actual image instead of assuming a particular swap manager. Current Trixie Lite images use Raspberry Pi's `rpi-swap` package, which replaces the older `dphys-swapfile`. By default it creates *zram*, compressed swap space kept in RAM, and from time to time moves rarely used data from zram to a file at `/var/swap`. Only zram uses that file, so `swapon --show` normally lists `/dev/zram0` and not `/var/swap`.
 
 Run `zramctl` only if installed; otherwise record that and skip that line:
 
@@ -288,13 +298,13 @@ systemctl list-timers rpi-zram-writeback.timer --no-pager
 ls -l /var/swap
 ```
 
-**Reference:** [rpi-swap `swap.conf(5)`](https://github.com/raspberrypi/rpi-swap/blob/dc2c7aa4465a66401ecbf9996b08aec3ab5a15ae/man/man5/swap.conf.5), also installed on the Pi as `man swap.conf`. It documents the mechanisms, the default size limits (each at most 2048 MiB), drop-ins in `/etc/rpi/swap.conf.d/`, and the automatic `vm.page-cluster=0` setting for zram.
+**Reference:** [rpi-swap `swap.conf(5)`](https://github.com/raspberrypi/rpi-swap/blob/dc2c7aa4465a66401ecbf9996b08aec3ab5a15ae/man/man5/swap.conf.5), also installed on the Pi as `man swap.conf`. It documents the default behavior and size limits, and drop-ins in `/etc/rpi/swap.conf.d/`.
 
 Empty `zramctl` output can mean no zram devices exist. In `vmstat`, ignore the first row when comparing current activity; it summarizes time since boot. Look for sustained swap traffic, poor response times, or out-of-memory messages during the workload.
 
 Zram compresses data in RAM at a CPU cost. It is not free memory, and it may not help much with incompressible data. Disk-backed swap uses storage and writes but can prevent an out-of-memory failure. A small Pi may need it more, not less.
 
-Do not copy DietPi's swap scripts, run `swapoff -a`, force a swappiness value, delete `/var/swap`, or install a second swap manager here. Leave the image's configuration intact for the first walkthrough. If pressure is a problem, first reduce the workload and skip the optional Nix layer. Record a separate experiment before proposing memory tuning.
+Do not copy DietPi's swap scripts, run `swapoff -a`, force a swappiness value (the kernel setting for how readily it swaps), delete `/var/swap`, or install a second swap manager here. Leave the image's configuration intact for the first walkthrough. If pressure is a problem, first reduce the workload and skip the optional Nix layer. Record a separate experiment before proposing memory tuning.
 
 ## Checkpoint and recovery
 
@@ -309,7 +319,7 @@ sudo journalctl -b -1 --no-pager
 
 The last command shows the previous boot only if you kept the optional persistent journal from step 4; with the stock RAM-only journal it reports no earlier boot.
 
-**Reference:** [systemctl failed units](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) and [journalctl boot and priority filters](https://manpages.debian.org/trixie/systemd/journalctl.1.en.html); see the Pi's installed `man ss` for socket inspection.
+**Reference:** [systemctl failed units](https://manpages.debian.org/trixie/systemd/systemctl.1.en.html) and [journalctl boot and priority filters](https://manpages.debian.org/trixie/systemd/journalctl.1.en.html).
 
 To check repository access, refresh APT indexes separately:
 
@@ -331,7 +341,7 @@ Record each intentionally disabled unit, removed package, and changed file. Keep
 | Previous-boot logs disappear. | Without the optional drop-in, this is the stock RAM-only journal. With it, check the effective configuration and storage space. Do not continue by disabling logging. |
 | APT cannot resolve repositories. | Restore networking, DNS, or time services if changed. Never bypass signature or TLS checks. |
 
-If checks pass, record the result and make a new known-good backup. Continue to [Kicksecure-inspired hardening](/kixetpi/guides/kicksecure/).
+If checks pass, record the result and make a new full-card backup. Continue to [Kicksecure-inspired hardening](/kixetpi/guides/kicksecure/).
 
 ## Sources and review status
 

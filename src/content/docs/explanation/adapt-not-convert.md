@@ -12,10 +12,10 @@ Raspberry Pi OS, DietPi, and Kicksecure all build on Debian. That makes their co
 - kernels, firmware, and boot loaders;
 - which machines it supports;
 - which services run by default;
-- package dependencies and metapackages;
+- package dependencies and metapackages (packages that exist only to install a related set of other packages);
 - release and support lifecycles.
 
-Even Raspberry Pi OS is not one archive. The 64-bit edition uses Debian's `arm64` packages, while the 32-bit edition uses Raspbian's `armhf` packages. Both add Raspberry Pi's own repository for kernels, firmware, and tools.
+Even Raspberry Pi OS is not one archive. The 64-bit edition uses Debian's `arm64` (64-bit ARM) packages, while the 32-bit edition uses Raspbian's `armhf` (32-bit ARM) packages. Both add Raspberry Pi's own repository for kernels, firmware, and tools.
 
 *Distromorphing* means converting an installed Linux distribution into another one, usually by adding the target's repositories and installing its metapackages. DietPi and Kicksecure both document conversion paths, and both warn about what conversion replaces or deletes. On a Pi, conversion also risks the Raspberry Pi kernel, firmware, and boot configuration that make the hardware work. KixetPi avoids those risks by borrowing **practices**, not packages.
 

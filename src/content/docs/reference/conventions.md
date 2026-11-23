@@ -12,7 +12,7 @@ Each numbered step in a stage guide follows the same order:
 1. **Conditions and warnings** come first. Stop if your machine does not match them.
 2. **The code block** has a title naming where it runs and what it does.
 3. **Explanation** after the block says what the command changed and what output to expect.
-4. A **Reference** line links the upstream manual or documentation for that exact command.
+4. A **Reference** line links upstream documentation where it adds detail. For a common command without one, use the Pi's installed manual (`man COMMAND`).
 5. **Checks** say how to confirm the result before the next step.
 
 Do not paste a whole page or section into a terminal. Run one logical step at a time and inspect each result.
@@ -23,7 +23,7 @@ The block title names the machine and session. Commands with no machine named in
 
 | Title starts with | Run it on |
 | --- | --- |
-| `Pi:` or `Pi user:` | The test Pi, as your ordinary administrator account, usually over SSH. |
+| `Pi:` or `Pi user:` | The test Pi, as your ordinary administrator account, usually over SSH. `Pi user:` marks steps that must run without `sudo`, such as the Nix and Home Manager commands. |
 | `Pi local console:` | A keyboard and display (or serial console) attached to the Pi. An SSH session is not a substitute. |
 | `Pi original session:` / `Pi retained root shell:` | The specific session that the step tells you to keep open for recovery. |
 | `Pi second normal-user session:` | A new, separate login, so the test does not reuse existing credentials. |
@@ -31,7 +31,7 @@ The block title names the machine and session. Commands with no machine named in
 | `VM guest:` / `Mac:` | Only in the [VM command test run](/kixetpi/reference/vm-test-run/). Never run a VM guest block in the Mac's shell. |
 | A file path, such as `/etc/systemd/...` | File contents to create or edit, not commands. |
 
-None of these commands are for the computer hosting this documentation site.
+Run each block only on the machine its title names.
 
 ## Code block languages
 
@@ -53,8 +53,9 @@ Replace every placeholder with a value from your own machine. Stop if you cannot
 | `PACKAGE_NAME` | The exact APT package name under review. |
 | `YOUR_APP.service` | The systemd unit for your own application. |
 | `PATH` in `visudo -f PATH` | The sudoers file that grants the rule, not the shell's `$PATH`. |
-| `ADMIN_IP`, `ADMIN_HOSTNAME` | The administration computer's address and name as seen by the Pi. |
+| `ADMIN_IP`, `ADMIN_HOSTNAME` | The administration computer's address and name as seen by the Pi. In an SSH session on the Pi, `echo $SSH_CLIENT` prints the address first. If you do not know a name for it, use the address for both. |
 | `~/.ssh/kixetpi_ed25519` | Your actual private key path, if you used an existing key. |
+| `GENERATION_PATH` | A Home Manager generation's `/nix/store/...` path, copied from `home-manager generations`. |
 
 ## Shell behavior to keep in mind
 
