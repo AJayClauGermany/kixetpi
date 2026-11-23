@@ -26,6 +26,7 @@ The block title names the machine and session. Commands with no machine named in
 | `Pi:` or `Pi user:` | The test Pi, as your ordinary administrator account, usually over SSH. `Pi user:` marks steps that must run without `sudo`, such as the Nix and Home Manager commands. |
 | `Pi local console:` | A keyboard and display (or serial console) attached to the Pi. An SSH session is not a substitute. |
 | `Pi original session:` / `Pi retained root shell:` | The specific session that the step tells you to keep open for recovery. |
+| `Pi (known-good card):` | The Pi while booted from the known-good card, with the failed card attached in a USB reader. Only in [local save points](/kixetpi/guides/save-points/#restore-when-the-pi-does-not-boot). |
 | `Pi second normal-user session:` | A new, separate login, so the test does not reuse existing credentials. |
 | `Administration computer:` | The computer you use to image the card and connect over SSH. |
 | `VM guest:` / `Mac:` | Only in the [VM command test run](/kixetpi/reference/vm-test-run/). Never run a VM guest block in the Mac's shell. |
@@ -55,6 +56,8 @@ Replace every placeholder with a value from your own machine. Stop if you cannot
 | `PATH` in `visudo -f PATH` | The sudoers file that grants the rule, not the shell's `$PATH`. |
 | `ADMIN_IP`, `ADMIN_HOSTNAME` | The administration computer's address and name as seen by the Pi. In an SSH session on the Pi, `echo $SSH_CLIENT` prints the address first. If you do not know a name for it, use the address for both. |
 | `~/.ssh/kixetpi_ed25519` | Your actual private key path, if you used an existing key. |
+| `SAVE_POINT_NAME` | A save point name of your choice or from `savepoint list`: letters, digits, `.`, `-`, and `_`. |
+| `/dev/sdX1`, `/dev/sdX2` | The failed card's boot and root partitions as shown by `lsblk`, for example `/dev/sda1`. Never the card you booted from. |
 | `GENERATION_PATH` | A Home Manager generation's `/nix/store/...` path, copied from `home-manager generations`. |
 
 ## Shell behavior to keep in mind
@@ -92,6 +95,9 @@ This is a lookup table, not a sequence to execute. **Inspects** means the comman
 | `curl -o`, `sha256sum`, `tar -tJf` | Download a file, hash it, list an archive. | Writes the download only | [Stage 4 §2](/kixetpi/guides/nix/#2-review-and-install-upstream-nix) |
 | `tar -xJf`, `./install --daemon` | Extract files; install Nix (accounts, services, shell profiles). | Yes; backup-dependent | [Stage 4 §2](/kixetpi/guides/nix/#2-review-and-install-upstream-nix) |
 | `nix flake lock` / `update`, `nix build --dry-run`, `nix build` | Write the lock file; evaluate and possibly fetch; build into the store and a `result` link. | Yes (user files and store) | [Stage 4 §5](/kixetpi/guides/nix/#5-lock-build-and-activate-without-sudo) |
+| `savepoint list` | Lists save points and free space. | Inspects | [Local save points](/kixetpi/guides/save-points/) |
+| `savepoint create` / `delete` | Copies system files into `/var/local/savepoints`, or removes a copy. | Yes; uses or frees card space | [Local save points §3](/kixetpi/guides/save-points/#3-create-the-baseline) |
+| `savepoint restore` | Replaces system files and package state with a save point's, deleting files it does not contain. Untested on hardware. | Yes; no undo without another save point | [Local save points §5](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages) |
 | `./result/activate`, `home-manager switch [--rollback]` | Activate a home environment; runs code as your user. | Yes | [Stage 4 §5–6](/kixetpi/guides/nix/#6-add-remove-update-and-roll-back) |
 | `nix-collect-garbage` | Deletes unreachable store objects; with `-d`, also old generations and rollback paths. | Yes; not recoverable | [Stage 4: storage](/kixetpi/guides/nix/#storage-and-garbage-collection) |
 
