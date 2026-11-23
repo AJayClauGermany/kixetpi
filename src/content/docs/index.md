@@ -22,7 +22,7 @@ Complete each stage's checkpoint before continuing. Stopping after stage 3 is a 
 
 ## Find what you need
 
-The documentation is organized by what you are trying to do, following the [Diátaxis](https://diataxis.fr/) framework. The stage guides are the main path; the other sections support them.
+The documentation is organized by what you are trying to do. The stage guides are the main path; the other sections support them.
 
 | You want to… | Go to | Examples |
 | --- | --- | --- |
@@ -44,18 +44,18 @@ You need:
 ## Use these instructions safely
 
 - Commands on the four guide pages are for the separate Raspberry Pi unless a block's title names your administration computer. See [where a block runs](/kixetpi/reference/conventions/#where-a-block-runs).
-- Read the prerequisites and warnings before each block. Explanations and references follow it; complete the result checks before the next step. Do not paste a whole page into a terminal.
+- Read the prerequisites and warnings before each block. The explanation and checks come after the block; complete those checks before the next step. Do not paste a whole page into a terminal.
 - Replace example usernames, addresses, and file paths with your own values. Stop if the documented preconditions do not match your machine.
 - Stop on unexpected errors; do not continue to later commands in the block. Expected failures, such as a refused password-only login, are labeled.
 - Make one change at a time. Keep an existing SSH session open while testing another, and arrange local console access before access-control changes.
-- Keep a known-good full-card backup or spare card outside the Pi. Package lists and copies of `/etc` are useful records, not a bootable recovery image.
+- Keep a known-good card or a full-card backup outside the Pi. Package lists and copies of `/etc` are useful records, not a bootable recovery image.
 - Preserve updates, working name resolution, time synchronization, and useful logs. A smaller system that cannot update or diagnose a failure is not the goal.
 
 Each stage begins with a **What changes and how to recover** table. [What recovery means](/kixetpi/explanation/limits/#what-recovery-means) explains its three levels: inspection, reversible setting, and backup-dependent change.
 
 ## Scope in brief
 
-The first target is a headless Pi on a trusted home network, administered from an ordinary account with `sudo`. It is not a guide for a public server, router, high-assurance workstation, or anonymity system. Hardening here reduces exposure; it does not make malicious software safe or establish verified boot, disk encryption, or protection after root compromise. See [Security, performance, and recovery limits](/kixetpi/explanation/limits/) for details.
+The first target is a headless Pi (one used without its own display or keyboard) on a trusted home network, administered from an ordinary account with `sudo`. It is not a guide for a public server, router, high-assurance workstation, or anonymity system. Hardening here reduces exposure; it does not make malicious software safe or establish verified boot, disk encryption, or protection after root compromise. See [Security, performance, and recovery limits](/kixetpi/explanation/limits/) for details.
 
 ## Working with an AI agent
 

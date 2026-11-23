@@ -38,7 +38,7 @@ Hardening reduces unnecessary exposure. It does not make malicious software safe
 - An inbound firewall with outgoing traffic allowed does not stop an allowed program from sending data out.
 - Installing AppArmor does not confine an application. The kernel must enable it and the application needs a loaded, enforcing profile.
 
-The guides do not establish verified boot, full-disk encryption, physical security, or protection after root compromise, and they do not reproduce Kicksecure's complete security design. Install software only from sources you trust, and do not keep sensitive credentials on a test Pi.
+The guides do not establish verified boot, full-disk encryption, physical security, or protection after an attacker gains root (full administrator) access, and they do not reproduce Kicksecure's complete security design. Install software only from sources you trust, and do not keep sensitive credentials on a test Pi.
 
 ## What recovery means
 

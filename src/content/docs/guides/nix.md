@@ -6,21 +6,21 @@ description: Optionally install Nix and Home Manager alongside Raspberry Pi OS w
 You can stop after [hardening](/kixetpi/guides/kicksecure/) and use APT alone. This stage lets you list your user tools in a configuration file, reuse that configuration, and return to earlier package environments. It does not convert the Pi to NixOS.
 
 :::caution[Optional and untested on this project]
-This path targets a compatible Pi running 64-bit Raspberry Pi OS Lite. It adds a privileged background service, build accounts, and a package store. You must update Nix and its packages separately from APT. We have not measured resource use or tested Home Manager activation on a Pi. Use the separate test Pi, not the documentation computer.
+This path targets a compatible Pi running 64-bit Raspberry Pi OS Lite. It adds a privileged background service, build accounts, and a package store. You must update Nix and its packages separately from APT. We have not measured resource use or tested Home Manager activation on a Pi.
 :::
 
 ## At a glance
 
 - **Goal:** A multi-user Nix installation and a small, pinned Home Manager configuration for your user tools, with a tested rollback.
 - **Runs on:** The test Pi as your ordinary user; the installer requests `sudo` itself.
-- **You need:** Stage 3's [checkpoint](/kixetpi/guides/kicksecure/#checkpoint), 64-bit userspace (`arm64`), spare RAM and storage, and a fresh pre-Nix card backup.
+- **You need:** Stage 3's [checkpoint](/kixetpi/guides/kicksecure/#checkpoint), 64-bit userspace (`arm64`), spare RAM and storage, and a fresh pre-Nix full-card backup.
 - **Ends with:** The [checkpoint](#checkpoint): recorded versions, locks, and generations, plus a tested package change and rollback.
 
 ## What changes and how to recover
 
 | Action | Recovery limit |
 | --- | --- |
-| Install Nix | Changes the host, including accounts and services. Preserve a pre-Nix card image; Home Manager rollback does not undo installation. |
+| Install Nix | Changes the host, including accounts and services. Preserve a pre-Nix full-card backup; Home Manager rollback does not undo installation. |
 | Edit user configuration | Restore your saved files. If already activated, also return to a known-good retained generation. |
 | Activate Home Manager | Changes your user environment. The first activation has no previous generation; later rollback does not restore arbitrary user data. |
 | Delete generations and collect unused packages | Removed local rollback options are lost. A saved configuration is not a guarantee you can download or rebuild everything later. |
@@ -53,13 +53,13 @@ df -i /
 
 Continue only when the architecture results are `arm64`, `64`, and `aarch64`. This guide covers only 64-bit userspace. It does not claim that Nix cannot run on a 32-bit Pi. Do not work around this requirement with incompatible APT sources or an installer selected only from the kernel architecture.
 
-The published support list includes 64-bit ARM, while the installer also offers 32-bit ARM builds. Package availability differs between them. Nixpkgs provides prebuilt packages for `aarch64-linux` through Hydra, its build service. It places 32-bit ARM in tier 3 without that coverage.
+The published support list includes 64-bit ARM, while the installer also offers 32-bit ARM builds. Package availability differs between them. Nixpkgs builds ready-to-download packages for 64-bit ARM (`aarch64-linux`) on Hydra, its build service. 32-bit ARM is in its lowest support tier (tier 3), without those prebuilt packages, so most software would have to be compiled on the Pi.
 
-CPU support alone is not enough. Evaluating Nix configuration consumes memory. Packages, source trees, and retained generations consume storage and inodes. A generation is a built version of your environment. Inodes are filesystem entries whose usage `df -i` reports. A small package list does not imply a small store.
+CPU support alone is not enough. Evaluating Nix configuration (working out what to build from your files) consumes memory. Packages, source trees, and retained generations consume storage and inodes. A generation is a built version of your environment. Inodes are filesystem entries whose usage `df -i` reports. A small package list does not imply a small store.
 
 Begin on the proposed Pi 4 test target with free space beyond the base installation, and record the actual cost. On a 512 MB board, start with the APT-only result instead. These are project choices, not an asserted universal Nix minimum. If the Pi is already swapping heavily or nearly full, stop here. Do not disable swap to make the baseline look smaller.
 
-**Reference:** [Nix supported platforms](https://nix.dev/manual/nix/2.35/installation/supported-platforms.html), [Nixpkgs platform tiers](https://nixos.org/manual/nixpkgs/stable/#sec-platform-breakdown), [versioned installer platform choices](https://releases.nixos.org/nix/nix-2.35.6/install), and the installed `dpkg(1)`, `getconf(1)`, `uname(1)`, `free(1)`, `swapon(8)`, and `df(1)` manuals for the checks.
+**Reference:** [Nix supported platforms](https://nix.dev/manual/nix/2.35/installation/supported-platforms.html), [Nixpkgs platform tiers](https://nixos.org/manual/nixpkgs/stable/#sec-platform-breakdown), [versioned installer platform choices](https://releases.nixos.org/nix/nix-2.35.6/install).
 
 If `/nix` or a Nix installation already exists, stop and inspect its installer, configuration, users, and profiles. This page assumes no existing Nix installation and does not describe an in-place installer migration.
 
@@ -111,13 +111,15 @@ less install-multi-user
 less install-systemd-multi-user.sh
 ```
 
-Review the scripts they invoke too, especially the proposed sudo, account, systemd, and shell-profile changes. If a selected release has a different layout, follow its own instructions rather than executing an unreviewed replacement. Reading the download wrapper alone would not review these scripts, and inspecting scripts does not prove that the included binaries are safe.
+These are ordinary shell scripts; press `q` to leave `less`. You do not need to understand every line. Look for the changes they will make: `sudo` calls, new build accounts and their group (`nixbld`), systemd units, and edits to shell startup files under `/etc`. Review any other scripts they call in the same way. If a selected release has a different layout, follow its own instructions rather than executing an unreviewed replacement.
 
-**Reference:** [Nix binary-tarball installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#installing-from-a-binary-tarball) and the installed `tar(1)` and `less(1)` manuals.
+The matching checksum is the essential integrity check. Reading the scripts tells you what will change on the Pi; it does not prove that the included programs are safe.
+
+**Reference:** [Nix binary-tarball installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#installing-from-a-binary-tarball).
 
 ### Install the reviewed archive
 
-Only after reviewing the scripts, run the local installer from the extracted directory as your normal administrator account. Let it request sudo when needed. Keep the pre-Nix image available; this changes host accounts, services, and shell initialization.
+Only after reviewing the scripts, run the local installer from the extracted directory as your normal administrator account. Let it request sudo when needed. Keep the pre-Nix full-card backup available; this changes host accounts, services, and shell initialization.
 
 Do not overwrite an existing `/etc/nix/nix.conf`, disable signature checks, add an unfamiliar binary cache, or add yourself to `trusted-users` to bypass an error. Record the backup files and changes the installer reports:
 
@@ -125,7 +127,7 @@ Do not overwrite an existing `/etc/nix/nix.conf`, disable signature checks, add 
 ./install --daemon
 ```
 
-`--daemon` is required: on Linux, this script still defaults to a single-user installation. The installer also adds a root `nixpkgs-unstable` channel by default. This flake-based guide does not use it; the installer's `--no-channel-add` option skips it, but that variation has not been tested here. Do not add `--yes`, which accepts every installer prompt without review.
+`--daemon` is required: on Linux, this script still defaults to a single-user installation. The installer also adds a root `nixpkgs-unstable` channel by default. A channel is an older way of subscribing to a package set; this guide uses flakes instead and does not use it. The installer's `--no-channel-add` option skips it, but that variation has not been tested here. Do not add `--yes`, which accepts every installer prompt without review.
 
 The daemon is a privileged background service that manages the shared store using separate build accounts. Permission to use it is not the same as being a `trusted-users` member; that setting grants capabilities that should be treated as root-equivalent.
 
@@ -139,9 +141,9 @@ nix --version
 systemctl status nix-daemon.socket nix-daemon.service --no-pager
 ```
 
-The service can be socket-activated, so an idle service alone is not proof of failure. If the command is missing, follow the installer's shell initialization instructions. Do not reinstall repeatedly or symlink binaries into `/usr/bin`.
+The service is socket-activated: systemd starts it only when a client connects. An `inactive` service is not a failure while `nix-daemon.socket` shows `active (listening)`. If the command is missing, follow the installer's shell initialization instructions. Do not reinstall repeatedly or symlink binaries into `/usr/bin`.
 
-**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#multi-user-installation) and the installed `systemctl(1)` manual.
+**Reference:** [Nix multi-user installation](https://nix.dev/manual/nix/2.35/installation/installing-binary.html#multi-user-installation).
 
 ## 3. Enable the commands for this user
 
@@ -267,7 +269,7 @@ nix build .#homeConfigurations.pi.activationPackage
 
 Building creates an environment but does not make it active.
 
-Activation changes your user environment and may run actions with your user's permissions. Keep the pre-Nix card image available. The first generation has no previous generation to roll back to.
+Activation changes your user environment and may run actions with your user's permissions. Keep the pre-Nix full-card backup available. The first generation has no previous generation to roll back to.
 
 Run the next block only after a successful build, without sudo. If it reports a conflicting file, inspect and back up that file instead of forcing an overwrite.
 
@@ -276,7 +278,7 @@ cd ~/.config/home-manager
 ./result/activate
 ```
 
-This sets up Home Manager from the input recorded in `flake.lock`, rather than a second installer whose version can change. Run without arguments, the activation script uses Home Manager's legacy activation mode, which also creates the first profile generation. Home Manager's own standalone instructions use `nix run home-manager/release-26.05 -- init --switch` instead; this guide keeps the separate build and activation steps so you can review the build first. Activation creates links and applies declared user settings.
+This sets up Home Manager from the version recorded in `flake.lock`, rather than downloading a separate installer whose version can change. It creates links, applies declared user settings, and records your first generation. Home Manager's own standalone instructions use `nix run home-manager/release-26.05 -- init --switch` instead; this guide builds and activates in separate steps so you can review the build first.
 
 This example does not manage your shell configuration or change your login shell.
 
@@ -308,7 +310,7 @@ rg --version
 
 Confirm the selected executables are from your Nix user environment. If APT also installed one of these tools, `type -a` will show both. Removing the Home Manager package can make the APT version run again. The order of directories in `PATH` selects which executable runs. It does not isolate the programs, and APT does not track Nix packages.
 
-**Reference:** [Home Manager generations](https://nix-community.github.io/home-manager/usage/rollbacks.html), [standalone configuration](https://nix-community.github.io/home-manager/usage/configuration.html), and the installed manuals `man bash`, `man jq`, and `man rg` for command lookup and version checks.
+**Reference:** [Home Manager generations](https://nix-community.github.io/home-manager/usage/rollbacks.html), [standalone configuration](https://nix-community.github.io/home-manager/usage/configuration.html).
 
 ## 6. Add, remove, update, and roll back
 
@@ -338,14 +340,16 @@ This changes the active user environment. It does not delete old generations, pa
 
 ### Input updates
 
-Before updating packages, back up `flake.nix`, `home.nix`, and `flake.lock`, and retain the current generation for recovery. Then update the inputs deliberately:
+Before updating packages, back up `flake.nix`, `home.nix`, and `flake.lock`, and retain the current generation for recovery. Then keep a comparison copy of the lock file and update the inputs deliberately:
 
 ```sh title="Pi user: update the lock, not the operating system"
 cd ~/.config/home-manager
+cp flake.lock flake.lock.before-update
 nix flake update
+diff flake.lock.before-update flake.lock
 ```
 
-Review the lock-file changes before building with the new inputs. Repeat the [build preview](#5-lock-build-and-activate-without-sudo) and stop if it proposes large local builds. Only then build the updated environment:
+`nix flake update` prints each input it moved. In the `diff` output, changed `rev` and `lastModified` values show which inputs now point to newer revisions; `diff` returns a nonzero status when the files differ, which is expected. Review these changes before building with the new inputs. Repeat the [build preview](#5-lock-build-and-activate-without-sudo) and stop if it proposes large local builds. Only then build the updated environment:
 
 ```sh title="Pi user: build the reviewed input updates"
 cd ~/.config/home-manager
@@ -368,7 +372,11 @@ home-manager switch --rollback
 
 **Reference:** [Home Manager rollback instructions](https://nix-community.github.io/home-manager/usage/rollbacks.html) and [26.05 switch implementation](https://github.com/nix-community/home-manager/blob/release-26.05/home-manager/home-manager).
 
-For a specific older generation, use the store path shown in the generation list and run its `activate` script directly. This also avoids assuming a failed activation made a new generation current.
+`home-manager generations` prints one line per generation, such as `2026-11-20 10:15 : id 3 -> /nix/store/...-home-manager-generation`. To return to a specific older generation, copy its `/nix/store/...` path and run the `activate` script inside it. This also avoids assuming a failed activation made a new generation current:
+
+```sh title="Pi user: activate a specific older generation"
+GENERATION_PATH/activate
+```
 
 Restore your known-good configuration and lock file too, so the next ordinary switch does not rebuild the failed change. Keep real backups of important data.
 
@@ -376,7 +384,9 @@ Restore your known-good configuration and lock file too, so the next ordinary sw
 
 Inspect `df -h /` and `du -sh /nix/store` after the first installation and each update. Old generations consume space but provide rollback paths. The `result` link also keeps its build reachable.
 
-Do not delete `/nix/store` files by hand. After checking which generations you still need, use Home Manager's documented generation expiry and Nix garbage collection commands. Start conservatively with `nix-collect-garbage` as your normal user. Without generation-deletion options it collects only objects that no retained root needs, so it may reclaim little space.
+Do not delete `/nix/store` files by hand. After checking which generations you still need, use Home Manager's documented generation expiry and Nix garbage collection commands. Start conservatively with `nix-collect-garbage` as your normal user. Without generation-deletion options it removes only store objects that nothing still uses (no retained generation, profile, or `result` link), so it may reclaim little space.
+
+To free more, first remove generations you no longer need. For example, `home-manager expire-generations '-30 days'` removes generations older than 30 days, keeping the current one; then run `nix-collect-garbage` again.
 
 Avoid `nix-collect-garbage -d` during the walkthrough, especially with sudo, which can affect profiles beyond your own. Removing old generations and their store objects removes local rollback options. Keep both configuration backups and retained generations until you have tested the new environment.
 
@@ -411,7 +421,7 @@ If you have expanded the configuration beyond these packages, follow that versio
 
 Removing Home Manager does not uninstall Nix. Follow the [official multi-user Nix uninstall instructions](https://nix.dev/manual/nix/2.35/installation/uninstall.html) for your installer. Do not start with `rm -rf /nix`, and do not assume uninstalling removes every user data file.
 
-Uninstallation includes daemon units, shell initialization, build accounts, configuration, and store cleanup. Restoring the pre-Nix test-card image is the clearest return to the earlier baseline.
+Uninstallation includes daemon units, shell initialization, build accounts, configuration, and store cleanup. Restoring the pre-Nix full-card backup is the clearest return to the earlier baseline.
 
 ## Checkpoint
 
