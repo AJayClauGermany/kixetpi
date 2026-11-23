@@ -27,6 +27,8 @@ Complete the [base setup](/kixetpi/guides/raspberry-pi-os/) and its backup check
 
 A *drop-in* is a small configuration file placed beside a program's main configuration file. Deleting it undoes the change without editing the main file.
 
+If you set up optional [local save points](/kixetpi/guides/save-points/), the marked steps below name a save point to create first. Restoring it returns system files to that moment without re-flashing. It lives on the same card, so it does not replace the backup.
+
 ## What transfers and what does not
 
 | DietPi practice | Adaptation in this guide |
@@ -121,6 +123,16 @@ sudo systemctl start bluetooth.service
 
 Disable automatic startup only after a successful trial and only if the recorded state was `enabled`. Review the unit's `Also=` setting first; if present, it is in the `[Install]` section of the `systemctl cat` output. The `disable` command can also change whether the units listed there start automatically. Record their states for recovery too.
 
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-service-disable
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
+
 Disable the reviewed service:
 
 ```sh title="Pi: keep the successful change across boots"
@@ -172,6 +184,16 @@ sudo apt-get -s remove PACKAGE_NAME
 **Reference:** [apt-cache dependency, reverse-dependency and policy queries](https://manpages.debian.org/trixie/apt/apt-cache.8.en.html) and [apt-get simulation](https://manpages.debian.org/trixie/apt/apt-get.8.en.html).
 
 Read the entire removal list. Stop if it includes boot, networking, SSH, security-update, hardware-support, or Raspberry Pi OS metapackages. A metapackage keeps a related set of packages installed. Stop if you do not understand a dependency.
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-package-removal
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 Only after reviewing the simulation, remove the package. Keep the known-good card ready if boot or networking fails. Do not add `-y`, `purge`, or an unreviewed `autoremove`; compare the actual APT prompt against the simulation before accepting it:
 
@@ -225,6 +247,16 @@ Either choice is valid. For this walkthrough, the stage checkpoints compare logs
 This example allows 64 MiB for persistent logs and 16 MiB for logs kept in RAM. These are project choices, not DietPi or Raspberry Pi defaults or tested limits for every card. A busy service may fill the budget before enough history accumulates.
 
 If a persistent journal already exists, **export the logs you need outside the Pi first**. Enforcing a smaller limit can permanently delete archived history.
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-journal
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 Create a new drop-in, a small configuration file read alongside the main file. Its `60-` prefix sorts after Raspberry Pi's `40-` file, so its `Storage` setting takes precedence. If its filename already exists, stop and review it rather than overwriting it.
 

@@ -50,6 +50,8 @@ Every stage begins with a table titled **What changes and how to recover**. The 
 | Reversible setting | Stopping a service, adding a drop-in file, enabling UFW | The recorded original state, and often working console or administrator access. Undo restores the setting, not every side effect. |
 | Backup-dependent | Flashing a card, upgrading or removing packages, deleting logs or Nix generations | A separate backup or known-good card made *before* the change. No reverse command reliably undoes these. |
 
+Optional [local save points](/kixetpi/guides/save-points/) sit between the last two levels: they can return system files to an earlier state without re-flashing, but they live on the same card and are lost with it. They reduce how often you need the separate backup; they do not replace it.
+
 Package lists and copies of `/etc` are useful records, not a bootable recovery image. A known-good spare card restores a working base, but not later application data. Keep important data and walkthrough notes outside the test card.
 
 ## What a test result means

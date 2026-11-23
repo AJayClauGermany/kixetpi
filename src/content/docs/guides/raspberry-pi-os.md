@@ -284,7 +284,7 @@ Before the next stage, confirm all of the following:
 | Unexpected release or architecture. | Re-image with the intended compatible Lite image. Do not convert the running userspace in place. |
 | An upgrade no longer boots. | Boot the known-good card and preserve logs or data from the failed card before re-imaging. |
 
-Keep the known-good card or a restore-tested full-card backup after these checks. Continue on the separate test card to [DietPi-inspired reduction](/kixetpi/guides/dietpi/).
+Keep the known-good card or a restore-tested full-card backup after these checks. This is a good moment to add optional [local save points](/kixetpi/guides/save-points/), which let you return to this working state without re-flashing. Then continue on the separate test card to [DietPi-inspired reduction](/kixetpi/guides/dietpi/).
 
 ## Sources and review status
 

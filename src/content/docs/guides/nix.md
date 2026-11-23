@@ -27,6 +27,8 @@ This path targets a compatible Pi running 64-bit Raspberry Pi OS Lite. It adds a
 
 Take a fresh full-card backup before installation. Keep it until installation, activation, reboot, and rollback checks pass. Restoring that image is the clearest return to the pre-Nix system.
 
+If you set up optional [local save points](/kixetpi/guides/save-points/), the installation step names one to create first. It covers the system files the installer changes, but not `/nix` or your home directory, so it does not replace the backup or Home Manager's own rollback.
+
 ## What Nix owns
 
 APT still manages the kernel, firmware, boot files, network, SSH server, firewall, and system services. Nix stores its own packages and dependencies under `/nix/store`; Home Manager chooses which of them appear in your user's environment.
@@ -120,6 +122,16 @@ The matching checksum is the essential integrity check. Reading the scripts tell
 ### Install the reviewed archive
 
 Only after reviewing the scripts, run the local installer from the extracted directory as your normal administrator account. Let it request sudo when needed. Keep the pre-Nix full-card backup available; this changes host accounts, services, and shell initialization.
+
+:::tip[Optional save point]
+Run this only if you set up [local save points](/kixetpi/guides/save-points/). Otherwise skip it: the command does not exist on a Pi without that setup, and this step works without it.
+
+```sh title="Pi: optional save point before this change"
+sudo savepoint create before-nix
+```
+
+To return to this point later, see [restoring a save point](/kixetpi/guides/save-points/#5-use-save-points-during-the-stages).
+:::
 
 Do not overwrite an existing `/etc/nix/nix.conf`, disable signature checks, add an unfamiliar binary cache, or add yourself to `trusted-users` to bypass an error. Record the backup files and changes the installer reports:
 

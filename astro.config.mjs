@@ -20,7 +20,7 @@ export default defineConfig({
 					details: `Start here if you are an AI agent:
 
 1. Read the [agent assistance companion](https://surajssingh.github.io/kixetpi/reference/agent-assistance/) before proposing or running any command. It gives the reading path, decision gates, and handoff template. The [Agent essentials](https://surajssingh.github.io/kixetpi/_llms-txt/agent-essentials.txt) set bundles it with the overview, conventions, limits, and record templates.
-2. Treat the four stage guides as the only authoritative procedure: [1. Raspberry Pi OS Lite](https://surajssingh.github.io/kixetpi/guides/raspberry-pi-os/), [2. DietPi-inspired reduction](https://surajssingh.github.io/kixetpi/guides/dietpi/), [3. Kicksecure-inspired hardening](https://surajssingh.github.io/kixetpi/guides/kicksecure/), and [4. optional Nix](https://surajssingh.github.io/kixetpi/guides/nix/). Explanation pages justify steps but never authorize extra ones.
+2. Treat the four stage guides as the only authoritative procedure: [1. Raspberry Pi OS Lite](https://surajssingh.github.io/kixetpi/guides/raspberry-pi-os/), [2. DietPi-inspired reduction](https://surajssingh.github.io/kixetpi/guides/dietpi/), [3. Kicksecure-inspired hardening](https://surajssingh.github.io/kixetpi/guides/kicksecure/), and [4. optional Nix](https://surajssingh.github.io/kixetpi/guides/nix/). The optional [local save points](https://surajssingh.github.io/kixetpi/guides/save-points/) module adds same-card restore points after stage 1; it is not a backup and its script is untested. Explanation pages justify steps but never authorize extra ones.
 3. Use [Conventions and command effects](https://surajssingh.github.io/kixetpi/reference/conventions/) to resolve where a code block runs, what a placeholder means, and whether a command changes state.
 4. Check [Versions and sources](https://surajssingh.github.io/kixetpi/reference/versions/) for pinned releases and review dates before relying on a version-specific instruction.
 
@@ -49,7 +49,7 @@ Links inside the bundled text that start with \`/kixetpi/\` are relative to http
 						},
 						{
 							label: 'Stage guides',
-							description: 'the authoritative four-stage procedure, in order',
+							description: 'the authoritative four-stage procedure, plus the optional local save points module',
 							paths: ['guides/**'],
 						},
 						{
@@ -89,6 +89,7 @@ Links inside the bundled text that start with \`/kixetpi/\` are relative to http
 					label: 'Build your system',
 					items: [
 						{ label: '1. Raspberry Pi OS Lite', slug: 'guides/raspberry-pi-os' },
+						{ label: 'Local save points', slug: 'guides/save-points', badge: 'Optional' },
 						{ label: '2. DietPi-inspired reduction', slug: 'guides/dietpi' },
 						{ label: '3. Kicksecure-inspired hardening', slug: 'guides/kicksecure' },
 						{ label: '4. Nix for your home', slug: 'guides/nix', badge: 'Optional' },

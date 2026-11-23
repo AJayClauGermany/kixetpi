@@ -23,6 +23,7 @@ The site follows the [Diátaxis](https://diataxis.fr/) framework loosely: the fo
 | --- | --- | --- |
 | `index.md` | Landing page | Stages, documentation map, prerequisites, and safety rules. |
 | `guides/raspberry-pi-os.md` | How-to guide | Image selection, first boot, updates, baseline, and recovery. |
+| `guides/save-points.md` | How-to guide | Optional same-card save points and restore after stage 1. |
 | `guides/dietpi.md` | How-to guide | Selective service and package reduction with resource tradeoffs. |
 | `guides/kicksecure.md` | How-to guide | SSH, firewall, update checks, and confinement limits. |
 | `guides/nix.md` | How-to guide | Optional declarative user packages and rollback. |

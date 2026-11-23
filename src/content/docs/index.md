@@ -18,6 +18,8 @@ These instructions combine upstream documentation with proposed integration choi
 | [3. Adapt Kicksecure practices](/kixetpi/guides/kicksecure/) | Reduce remote exposure, verify updates, and check available confinement. | No Kicksecure conversion, replacement kernel, or boot stack. |
 | [4. Add Nix optionally](/kixetpi/guides/nix/) | Declare a small user package set with Home Manager. | APT continues to own the operating system. |
 
+After stage 1 you can add [local save points](/kixetpi/guides/save-points/): optional restore points on the same card, so that a bad change does not always mean re-flashing.
+
 Complete each stage's checkpoint before continuing. Stopping after stage 3 is a complete path. Nix is opt-in, not a dependency of the lean or hardened configuration.
 
 ## Find what you need
